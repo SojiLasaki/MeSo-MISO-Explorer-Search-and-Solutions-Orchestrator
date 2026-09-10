@@ -10,7 +10,7 @@ from .handoff import queue_handoff
 from .miso_client import MisoClientError, execute, has_subscription_key
 from .reports import find_report
 from .request_builder import build, validate
-from .resolver import resolve
+from .resolver import gemini_general_answer, resolve
 from .routing import classify
 
 
@@ -121,6 +121,23 @@ def run_chat(question, session_id=None, mode=None, force_status=None, selected_s
     resolution = resolve(question, session.context, preferred_endpoint=preferred_endpoint)
     endpoint = resolution["endpoint"]
     events = [_event("intent", "success", "Understanding your request.")]
+
+    if resolution["intent"] == "general_info":
+        answer = gemini_general_answer(question) or (
+            "MISO is the Midcontinent Independent System Operator. It coordinates the regional electric grid "
+            "and wholesale electricity markets across much of the U.S. Midwest and South, including market data "
+            "such as load, generation, and prices."
+        )
+        payload = {
+            "session_id": session.session_id,
+            "status": "success",
+            "intent": "general_info",
+            "message": answer,
+            "delivery": classify(question, "general_info"),
+            "events": events + [_event("response", "success", "Answered an in-scope MISO overview question without calling a data endpoint.")],
+        }
+        AgentMessage.objects.create(session=session, role="assistant", content=answer, payload=payload)
+        return payload
 
     if not endpoint:
         payload = {

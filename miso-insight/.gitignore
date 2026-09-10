@@ -4,3 +4,4 @@ dist/
 backend/.env
 backend/db.sqlite3
 backend/__pycache__/
+.output/
