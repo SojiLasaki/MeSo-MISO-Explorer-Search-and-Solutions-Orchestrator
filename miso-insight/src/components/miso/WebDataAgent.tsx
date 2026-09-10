@@ -222,7 +222,7 @@ export function WebDataAgent({ powerTrader = false, initialReport, initialApi }:
           <Link to="/"><ArrowLeft className="size-3.5" />Go back</Link>
         </Button>
         <div className="min-w-0 text-center">
-          <p className="text-[14px] font-medium">{powerTrader ? "Power Trader Data Agent" : "MISO Data Agent"}</p>
+          <p className="text-[14px] font-medium">{powerTrader ? "Power Trader Data Agent" : "MeSo"}</p>
           {initialApi && <p className="max-w-56 truncate text-[11px] text-muted-foreground">Focused API: {initialApi.name}</p>}
         </div>
         <div className="flex flex-wrap items-center justify-self-end gap-2">
@@ -249,7 +249,7 @@ export function WebDataAgent({ powerTrader = false, initialReport, initialApi }:
           {!history.length && (
             <div className="mx-auto flex min-h-[calc(100dvh-12rem)] max-w-3xl flex-col justify-center text-center">
               <Sparkles className="mx-auto size-7 text-accent" />
-              <h1 className="mt-4 text-[clamp(2rem,5vw,3.4rem)] font-medium leading-[1] tracking-[-0.045em]">{initialApi ? `What would you like to do with ${initialApi.name}?` : "What would you like to do?"}</h1>
+              <h1 className="mt-4 text-[clamp(2rem,5vw,3.4rem)] font-medium leading-[1] tracking-[-0.045em]">{initialApi ? `What would you like to do with ${initialApi.name}?` : "Hi, I’m MeSo, what would you like to do?"}</h1>
               <p className="mx-auto mt-3 max-w-xl text-[14px] leading-relaxed text-muted-foreground">{initialApi ? "The selected API’s verified catalog metadata is already in this conversation." : initialReport ? `Focused on ${initialReport.title}. Its report and API-replacement context is ready.` : "Ask for data, a chart, API guidance, or a report. Implementation work is sent to your local agent only when you request it."}</p>
 
               <div className="mt-8 grid gap-4 text-left sm:grid-cols-2">
@@ -271,7 +271,7 @@ export function WebDataAgent({ powerTrader = false, initialReport, initialApi }:
           {history.length > 0 && <div className="mx-auto max-w-4xl space-y-4 pt-4">
             {history.map((turn, index) => (
               <div key={index} className={cn("max-w-[88%] rounded-2xl px-4 py-3 text-[13px] leading-relaxed", turn.role === "user" ? "ml-auto bg-primary text-primary-foreground" : "border bg-card/90 text-foreground shadow-soft")}>
-                <p className="mb-1 text-[10px] font-medium uppercase tracking-[0.1em] opacity-65">{turn.role === "user" ? "You" : "MISO AI"}</p>{turn.text}
+                <p className="mb-1 text-[10px] font-medium uppercase tracking-[0.1em] opacity-65">{turn.role === "user" ? "You" : "MeSo"}</p>{turn.text}
               </div>
             ))}
             {running && <div className="flex items-center gap-2 text-[12.5px] text-muted-foreground"><Loader2 className="size-4 animate-spin text-accent" /> Agent is resolving parameters and preparing a request…</div>}
