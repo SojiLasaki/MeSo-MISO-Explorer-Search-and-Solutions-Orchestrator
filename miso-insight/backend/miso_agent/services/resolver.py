@@ -16,7 +16,7 @@ NODES = {
     "louisiana": "LOUISIANA.HUB",
 }
 
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
 GEMINI_TIMEOUT_SECONDS = 15
 ALLOWED_INTENTS = {"retrieve_data", "api_request", "integration_guidance", "general_info"}
 
@@ -91,7 +91,7 @@ def _gemini_resolution(question, context, preferred_endpoint):
         headers={"Content-Type": "application/json", "x-goog-api-key": api_key},
         method="POST",
     )
-    print(f"[Gemini resolver] requesting model {GEMINI_MODEL}")
+    print(f"[Gemini resolver] requesting model {GEMINI_MODEL}", flush=True)
     try:
         with urlopen(request, timeout=GEMINI_TIMEOUT_SECONDS) as response:
             body = json.loads(response.read().decode("utf-8"))
@@ -103,7 +103,7 @@ def _gemini_resolution(question, context, preferred_endpoint):
     except (HTTPError, URLError, TimeoutError, KeyError, IndexError, TypeError, ValueError) as error:
         # Network/model failures do not make the data agent unusable. The caller
         # falls back to the explainable catalog matcher below.
-        print(f"[Gemini resolver] fallback: {type(error).__name__}")
+        print(f"[Gemini resolver] fallback: {type(error).__name__}: {getattr(error, 'reason', 'request failed')}", flush=True)
         return None
 
 
@@ -136,13 +136,13 @@ def gemini_general_answer(question):
         headers={"Content-Type": "application/json", "x-goog-api-key": api_key},
         method="POST",
     )
-    print(f"[Gemini answer] requesting model {GEMINI_MODEL}")
+    print(f"[Gemini answer] requesting model {GEMINI_MODEL}", flush=True)
     try:
         with urlopen(request, timeout=GEMINI_TIMEOUT_SECONDS) as response:
             body = json.loads(response.read().decode("utf-8"))
         return body["candidates"][0]["content"]["parts"][0]["text"].strip()
     except (HTTPError, URLError, TimeoutError, KeyError, IndexError, TypeError, ValueError) as error:
-        print(f"[Gemini answer] fallback: {type(error).__name__}")
+        print(f"[Gemini answer] fallback: {type(error).__name__}: {getattr(error, 'reason', 'request failed')}", flush=True)
         return None
 
 
