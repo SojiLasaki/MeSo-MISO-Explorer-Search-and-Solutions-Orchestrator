@@ -120,6 +120,22 @@ export interface MisoError {
   missing_parameters: string[];
 }
 
+export type AccessPolicyCategory = "public" | "portal" | "internal" | "personal" | "business";
+
+export interface AccessPolicyDecision {
+  category: AccessPolicyCategory;
+  requestable: boolean;
+}
+
+export interface AccessRequest {
+  category: Exclude<AccessPolicyCategory, "public">;
+  status: "draft" | "sent";
+  subject?: string;
+  body?: string;
+  recipient?: string;
+  timeline: string;
+}
+
 export type ResolutionStatus =
   | "resolved"
   | "needs_parameters"
@@ -211,4 +227,5 @@ export interface MisoResponse {
     cta_label: string;
     ask: string;
   };
+  access_request?: AccessRequest;
 }

@@ -21,6 +21,10 @@ GEMINI_TIMEOUT_SECONDS = 15
 ALLOWED_INTENTS = {"retrieve_data", "api_request", "integration_guidance", "general_info"}
 
 
+def is_general_info_question(question):
+    return bool(re.search(r"\bwhat is miso\b|\bwho is miso\b|\bhow does miso work\b|\bwhat does miso do\b", question, re.I))
+
+
 def _catalog_for_prompt():
     return [
         {
@@ -87,6 +91,7 @@ def _gemini_resolution(question, context, preferred_endpoint):
         headers={"Content-Type": "application/json", "x-goog-api-key": api_key},
         method="POST",
     )
+    print(f"[Gemini resolver] requesting model {GEMINI_MODEL}")
     try:
         with urlopen(request, timeout=GEMINI_TIMEOUT_SECONDS) as response:
             body = json.loads(response.read().decode("utf-8"))
@@ -131,6 +136,7 @@ def gemini_general_answer(question):
         headers={"Content-Type": "application/json", "x-goog-api-key": api_key},
         method="POST",
     )
+    print(f"[Gemini answer] requesting model {GEMINI_MODEL}")
     try:
         with urlopen(request, timeout=GEMINI_TIMEOUT_SECONDS) as response:
             body = json.loads(response.read().decode("utf-8"))
@@ -167,6 +173,16 @@ def resolve(question, context=None, today=None, preferred_endpoint=None):
             "missing": [],
             "chart_requested": False,
             "message": "That’s outside the scope of this MISO data assistant.",
+        }
+
+    if model is None and is_general_info_question(question):
+        return {
+            "intent": "general_info",
+            "endpoint": None,
+            "parameters": {},
+            "missing": [],
+            "chart_requested": False,
+            "message": "",
         }
 
     model_endpoint = None

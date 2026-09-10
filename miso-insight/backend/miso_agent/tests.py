@@ -6,6 +6,7 @@ from .services.errors import diagnose
 from .services.request_builder import build, validate
 from .services.resolver import resolve
 from .services.handoff import verify
+from .services.access_policy import classify_access, is_clearly_out_of_scope
 from .models import LocalAgentHandoff
 
 
@@ -36,6 +37,13 @@ class ParameterResolutionTests(TestCase):
         result = resolve("actual load yesterday", today=date(2026, 9, 9))
         errors = validate(result["endpoint"], {**result["parameters"], "region": "NORTH AMERICA"})
         self.assertEqual(errors[0]["parameter"], "region")
+
+    def test_restricted_keywords_do_not_bind_to_lmp(self):
+        self.assertEqual(classify_access("Show real-time congestion and bottlenecks on the MISO grid."), "portal")
+        self.assertEqual(classify_access("What are the real-time electricity prices in MISO right now?"), "portal")
+
+    def test_arithmetic_is_out_of_scope(self):
+        self.assertTrue(is_clearly_out_of_scope("what is 1 + 1"))
 
 
 class TroubleshootingTests(TestCase):

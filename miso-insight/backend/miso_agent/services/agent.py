@@ -12,6 +12,7 @@ from .reports import find_report
 from .request_builder import build, validate
 from .resolver import gemini_general_answer, resolve
 from .routing import classify
+from .access_policy import classify_access, restricted_response
 
 
 def _session(session_id):
@@ -70,6 +71,11 @@ def _record_failure(request, status, body):
 def run_chat(question, session_id=None, mode=None, force_status=None, selected_source_id=None):
     session = _session(session_id)
     AgentMessage.objects.create(session=session, role="user", content=question, payload={})
+    policy_category = classify_access(question)
+    if policy_category != "public":
+        payload = {"session_id": session.session_id, **restricted_response(question, policy_category)}
+        AgentMessage.objects.create(session=session, role="assistant", content=payload["message"], payload=payload)
+        return payload
     casual = _casual_reply(question)
     operational_scope = _operational_scope_reply(question)
     if casual or operational_scope:
@@ -123,11 +129,18 @@ def run_chat(question, session_id=None, mode=None, force_status=None, selected_s
     events = [_event("intent", "success", "Understanding your request.")]
 
     if resolution["intent"] == "general_info":
-        answer = gemini_general_answer(question) or (
-            "MISO is the Midcontinent Independent System Operator. It coordinates the regional electric grid "
-            "and wholesale electricity markets across much of the U.S. Midwest and South, including market data "
-            "such as load, generation, and prices."
-        )
+        answer = gemini_general_answer(question)
+        if not answer:
+            payload = {
+                "session_id": session.session_id,
+                "status": "error",
+                "intent": "general_info",
+                "message": "Gemini could not answer this MISO question. Please check the Gemini configuration or try again.",
+                "delivery": classify(question, "general_info"),
+                "events": events + [_event("response", "error", "Gemini did not return a response; no deterministic substitute was used.")],
+            }
+            AgentMessage.objects.create(session=session, role="assistant", content=payload["message"], payload=payload)
+            return payload
         payload = {
             "session_id": session.session_id,
             "status": "success",

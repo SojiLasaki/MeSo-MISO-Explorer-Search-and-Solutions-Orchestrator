@@ -9,6 +9,7 @@ import { withMisoTimestampNote } from "./dates";
 import { legacyReportBySourceId } from "./legacy-reports";
 import { resolveMisoQuery, sourceFromResolution } from "./resolver";
 import { containsSecret, toApiRequestSpec } from "./request-builder";
+import { buildAccessRequest, classifyAccessPolicy } from "./access-policy";
 import type {
   ExecutionStep,
   MetricValue,
@@ -186,7 +187,7 @@ async function maybePolishExplanation(
     });
     const result = await generateText({
       model: gateway("google/gemini-3.7-flash"),
-      prompt: `Write a short title and 2-sentence plain-language answer for a MISO energy user. Do not mention API keys, endpoints, or invent numbers that are not listed.
+      prompt: `You are MISO AI. Write a short title and 2-sentence plain-language answer for a MISO energy user. Only discuss public MISO information represented by the supplied dataset and metrics. Never provide personal information such as a person's salary, compensation, contact details, or personnel records. Never infer or reveal privileged/internal information about how MISO systems are connected. Do not mention API keys, endpoints, or invent numbers that are not listed.
 
 Question: ${question}
 Dataset: ${source.name}
@@ -302,6 +303,34 @@ export async function runMisoRequest(
   const startedAt = Date.now();
   const requestId = `req_${Math.random().toString(36).slice(2, 10)}`;
   const steps: ExecutionStep[] = [];
+
+  const accessPolicy = classifyAccessPolicy(question);
+  if (accessPolicy.category !== "public") {
+    steps.push({ label: "Access policy checked", detail: accessPolicy.category, status: accessPolicy.category === "personal" ? "error" : "skipped" });
+    const accessRequest = accessPolicy.category === "personal" ? undefined : buildAccessRequest(question, accessPolicy);
+    const explanation = accessPolicy.category === "personal"
+      ? "I can’t provide personal or personnel information, including a person’s salary, compensation, or private records."
+      : accessPolicy.category === "business"
+        ? "I can provide MISO data and explain what it shows, but I can’t provide business insights or make a business decision for you. Please contact MISO at support@askmiso.com for authorized assistance."
+      : accessPolicy.category === "internal"
+        ? "I can’t retrieve privileged internal information about MISO systems or how they are connected. Please contact MISO’s help desk for authorization and assistance."
+        : "That information is not publicly accessible through this assistant. Log into the MISO portal and go to the DART database MISO or PI MISO. If you still need access, use the generated request below so MISO can confirm authorization and an access timeline.";
+    const response: MisoResponse = {
+      request_id: requestId,
+      intent: { type: "clarify", confidence: 1, summary: question.trim() },
+      source: null,
+      parameters: {},
+      execution: { status: accessPolicy.category === "personal" ? "error" : "needs_auth", steps, duration_ms: Date.now() - startedAt },
+      output: { mode: "answer", include_api: false, include_chart: false, include_table: false, include_download: false },
+      title: accessPolicy.category === "personal" ? "Personal information request" : accessPolicy.category === "business" ? "Business decision support unavailable" : accessPolicy.category === "internal" ? "Internal access required" : "MISO portal access required",
+      answer: explanation,
+      explanation,
+      ...(accessRequest ? { access_request: accessRequest } : {}),
+    };
+    assertNoSecrets(response);
+    return response;
+  }
+
 
   let resolution: MisoResolution;
   try {

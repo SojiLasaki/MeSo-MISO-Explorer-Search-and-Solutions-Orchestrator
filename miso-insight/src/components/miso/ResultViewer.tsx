@@ -9,6 +9,7 @@ import { ErrorState } from "./ErrorState";
 import { ExecutionTimeline } from "./ExecutionTimeline";
 import { SourceIndicator } from "./SourceIndicator";
 import { RequiredParametersForm } from "./RequiredParametersForm";
+import { AccessRequestCard } from "./AccessRequestCard";
 import type { MisoResponse } from "@/lib/miso/types";
 
 const PTD_ENDPOINT_BY_SOURCE_ID: Record<string, string> = {
@@ -42,6 +43,20 @@ export function ResultViewer({
   onSubmitParameters?: (question: string, overrides: Record<string, string>) => void;
 }) {
   const { output, data, api, report, metrics, error } = response;
+
+  if (response.access_request) {
+    return (
+      <div className="animate-rise space-y-4">
+        <h3 className="text-[19px] font-medium tracking-tight">{response.title}</h3>
+        <p className="whitespace-pre-line text-[15px] leading-relaxed">{response.answer}</p>
+        <AccessRequestCard request={response.access_request} />
+      </div>
+    );
+  }
+
+  if (response.title && response.execution.status === "error" && response.answer) {
+    return <div className="animate-rise space-y-3"><h3 className="text-[19px] font-medium tracking-tight">{response.title}</h3><p className="whitespace-pre-line text-[15px] leading-relaxed">{response.answer}</p></div>;
+  }
 
   if (error) {
     return (
