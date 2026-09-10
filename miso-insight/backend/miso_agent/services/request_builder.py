@@ -1,6 +1,6 @@
 from urllib.parse import urlencode
 
-from .catalog import AUTH_HEADER, MISO_BASE_URL
+from .catalog import AUTH_HEADER, MISO_BASE_URL, MISO_PUBLIC_BASE_URL, supports_public
 
 
 def validate(endpoint, parameters):
@@ -16,7 +16,20 @@ def validate(endpoint, parameters):
     return issues
 
 
-def build(endpoint, parameters):
+def build(endpoint, parameters, *, prefer_public=False):
+    use_public = prefer_public and supports_public(endpoint)
+    if use_public:
+        path = endpoint["public_path"]
+        url = MISO_PUBLIC_BASE_URL + path
+        return {
+            "method": endpoint["method"],
+            "url": url,
+            "endpoint": url,
+            "params": {},
+            "headers": {"Accept": "application/json"},
+            "source": "public",
+        }
+
     path = endpoint["path"]
     query = {}
     for spec in endpoint["parameters"]:
@@ -25,6 +38,16 @@ def build(endpoint, parameters):
             path = path.replace("{" + spec["name"] + "}", str(value))
         elif spec["in"] == "query" and value not in (None, ""):
             query[spec["name"]] = value
+    # Leave unresolved path tokens only when the caller skipped optional path params.
+    if "{date}" in path and not parameters.get("date"):
+        path = path.replace("{date}", "current")
     base_url = MISO_BASE_URL + path
     url = base_url + ("?" + urlencode(query) if query else "")
-    return {"method": endpoint["method"], "url": url, "endpoint": MISO_BASE_URL + path, "params": query, "headers": {AUTH_HEADER: "[stored server-side]", "Accept": "application/json"}}
+    return {
+        "method": endpoint["method"],
+        "url": url,
+        "endpoint": MISO_BASE_URL + path,
+        "params": query,
+        "headers": {AUTH_HEADER: "[stored server-side]", "Accept": "application/json"},
+        "source": "data_exchange",
+    }

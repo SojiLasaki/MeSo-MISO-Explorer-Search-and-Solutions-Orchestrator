@@ -4,10 +4,10 @@ from uuid import uuid4
 import re
 
 from ..models import APIError, APIRequest, APIResponse, AgentMessage, AgentSession, RequestHistory, TroubleshootingResult
-from .catalog import endpoint as catalog_endpoint, endpoint_for_web_source
+from .catalog import endpoint as catalog_endpoint, endpoint_for_web_source, supports_public
 from .errors import diagnose
 from .handoff import queue_handoff
-from .miso_client import MisoClientError, execute, has_subscription_key
+from .miso_client import MisoClientError, execute, has_public_mode, has_subscription_key
 from .reports import find_report
 from .request_builder import build, validate
 from .resolver import gemini_general_answer, resolve
@@ -158,7 +158,6 @@ def run_chat(question, session_id=None, mode=None, force_status=None, selected_s
     session.context = {"endpoint": endpoint, "parameters": resolution["parameters"], "intent": resolution["intent"]}
     session.save(update_fields=["context", "updated_at"])
 
-    request_spec = build(endpoint, resolution["parameters"])
     if resolution["missing"]:
         missing = [{**item, "question": _question_for(item)} for item in resolution["missing"]]
         action = "before I can send this secure integration instruction to your local agent" if delivery["requires_local_agent"] else "before I can call MISO"
@@ -174,15 +173,24 @@ def run_chat(question, session_id=None, mode=None, force_status=None, selected_s
 
     issues = validate(endpoint, resolution["parameters"])
     if issues:
+        preview_spec = build(endpoint, resolution["parameters"])
         payload = {
             "session_id": session.session_id, "status": "validation_error", "endpoint": endpoint,
-            "parameters": resolution["parameters"], "request": request_spec, "issues": issues,
+            "parameters": resolution["parameters"], "request": preview_spec, "issues": issues,
             "delivery": delivery,
             "message": "I found a parameter that needs correction before MISO is called.",
             "events": events + [_event("validation", "error", "Parameter validation failed; no MISO request was sent.")],
         }
         AgentMessage.objects.create(session=session, role="assistant", content=payload["message"], payload=payload)
         return payload
+
+    chosen_mode = mode or ("live" if has_subscription_key() else ("public" if supports_public(endpoint) and has_public_mode() else "simulation"))
+    # Public mode only has a real feed for mapped operations; other datasets stay simulated.
+    if chosen_mode == "public" and not supports_public(endpoint):
+        chosen_mode = "simulation"
+        events.append(_event("availability", "warning", "This dataset is not on MISO's anonymous public API yet; using labeled simulation."))
+    prefer_public = chosen_mode == "public" or (chosen_mode == "live" and supports_public(endpoint))
+    request_spec = build(endpoint, resolution["parameters"], prefer_public=prefer_public)
 
     if resolution["intent"] == "integration_guidance":
         request = APIRequest.objects.create(session=session, source_id=endpoint["id"], method=request_spec["method"], url=request_spec["url"], parameters=resolution["parameters"], mode="template")
@@ -226,11 +234,15 @@ def run_chat(question, session_id=None, mode=None, force_status=None, selected_s
         AgentMessage.objects.create(session=session, role="assistant", content=payload["message"], payload=payload)
         return payload
 
-    chosen_mode = mode or ("live" if has_subscription_key() else "simulation")
     request = APIRequest.objects.create(session=session, source_id=endpoint["id"], method=request_spec["method"], url=request_spec["url"], parameters=resolution["parameters"], mode=chosen_mode)
+    auth_note = (
+        "Public MISO feed; no subscription key used."
+        if prefer_public
+        else "Subscription key remains server-side."
+    )
     events.extend([
         _event("validation", "success", "Required parameters are complete and valid."),
-        _event("request", "success", f"Built {request_spec['method']} request. Subscription key remains server-side."),
+        _event("request", "success", f"Built {request_spec['method']} request. {auth_note}"),
     ])
 
     if force_status:
@@ -253,7 +265,18 @@ def run_chat(question, session_id=None, mode=None, force_status=None, selected_s
         request.save(update_fields=["status_code"])
         APIResponse.objects.create(request=request, body=data)
         RequestHistory.objects.create(request=request, summary=f"{endpoint['name']} — {resolution['parameters'].get('date', '')}")
-        label = "SIMULATED RESPONSE — no MISO request was sent." if simulated else "Retrieved from MISO Data Exchange API."
+        if simulated:
+            label = "SIMULATED RESPONSE — no MISO request was sent."
+            source = "Development simulation"
+            authentication = "not used in simulation"
+        elif prefer_public:
+            label = "Retrieved from MISO Public API (anonymous Fuel Mix / display feed)."
+            source = "MISO Public API"
+            authentication = "none — public anonymous endpoint"
+        else:
+            label = "Retrieved from MISO Data Exchange API."
+            source = "MISO Data Exchange API"
+            authentication = "subscription key applied server-side"
         payload = {
             "session_id": session.session_id, "status": "success", "intent": resolution["intent"], "endpoint": endpoint,
             "parameters": resolution["parameters"], "request": request_spec, "data": data, "summary": _summary(data), "simulated": simulated,
@@ -262,8 +285,8 @@ def run_chat(question, session_id=None, mode=None, force_status=None, selected_s
             "message": f"{label} {endpoint['name']} is ready.",
             "verification": {
                 "tested": True, "status_code": status,
-                "source": "Development simulation" if simulated else "MISO Data Exchange API",
-                "authentication": "not used in simulation" if simulated else "subscription key applied server-side",
+                "source": source,
+                "authentication": authentication,
             },
             "events": events + [_event("api", "success", label), _event("response", "success", "Validated JSON response and stored non-secret request history. No local handoff was needed.")],
         }

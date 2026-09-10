@@ -25,7 +25,15 @@ class LocalAPIView(APIView):
 
 class HealthView(LocalAPIView):
     def get(self, request):
-        return Response({"ok": True, "service": "miso-ai-django", "miso_mode": "live" if has_subscription_key() else "simulation"})
+        from .services.miso_client import has_public_mode
+
+        if has_subscription_key():
+            miso_mode = "live"
+        elif has_public_mode():
+            miso_mode = "public"
+        else:
+            miso_mode = "simulation"
+        return Response({"ok": True, "service": "miso-ai-django", "miso_mode": miso_mode})
 
 
 class ChatView(LocalAPIView):
@@ -34,8 +42,8 @@ class ChatView(LocalAPIView):
         if not question:
             return Response({"detail": "question is required"}, status=status.HTTP_400_BAD_REQUEST)
         mode = request.data.get("mode")
-        if mode not in {None, "live", "simulation"}:
-            return Response({"detail": "mode must be live or simulation"}, status=status.HTTP_400_BAD_REQUEST)
+        if mode not in {None, "live", "public", "simulation"}:
+            return Response({"detail": "mode must be live, public, or simulation"}, status=status.HTTP_400_BAD_REQUEST)
         selected_source_id = request.data.get("selected_source_id")
         if selected_source_id is not None and not isinstance(selected_source_id, str):
             return Response({"detail": "selected_source_id must be a string"}, status=status.HTTP_400_BAD_REQUEST)

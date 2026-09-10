@@ -1,4 +1,4 @@
-export type LocalBackendMode = "simulation" | "live";
+export type LocalBackendMode = "simulation" | "public" | "live";
 
 /**
  * Production points to the deployed Web Data Agent. The loopback fallback is
@@ -54,7 +54,7 @@ export interface AgentResult {
 export interface ConnectionState {
   ok: boolean;
   service: string;
-  miso_mode: "live" | "simulation";
+  miso_mode: "live" | "public" | "simulation";
 }
 
 export interface KeyState {

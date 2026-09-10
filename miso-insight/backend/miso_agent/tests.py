@@ -199,3 +199,40 @@ class ApiFlowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"], "application/zip")
         self.assertIn("miso-local-integration-agent.zip", response["Content-Disposition"])
+
+
+class PublicFuelMixTests(TestCase):
+    def test_health_reports_public_without_subscription_key(self):
+        response = APIClient().get("/api/health/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["miso_mode"], "public")
+
+    def test_public_fuel_mix_request_targets_anonymous_host(self):
+        from .services.catalog import endpoint
+        from .services.request_builder import build
+
+        operation = endpoint("realtime_generation_fuel_type")
+        request = build(operation, {}, prefer_public=True)
+        self.assertEqual(request["url"], "https://public-api.misoenergy.org/api/FuelMix")
+        self.assertEqual(request["source"], "public")
+        self.assertNotIn("Ocp-Apim-Subscription-Key", request["headers"])
+
+    def test_normalize_public_fuel_mix_rows(self):
+        from .services.miso_client import normalize_public_fuel_mix
+
+        payload = {
+            "RefId": "10-Sep-2026 - Interval 10:25 EST",
+            "TotalMW": "90140",
+            "Fuel": {
+                "Type": [
+                    {"INTERVALEST": "2026-09-10 10:25:00 AM", "CATEGORY": "Coal", "ACT": "30866", "FUEL_CATEGORY": "Coal  (30,866 MW)"},
+                    {"INTERVALEST": "2026-09-10 10:25:00 AM", "CATEGORY": "Wind", "ACT": "1323", "FUEL_CATEGORY": "Wind  (1,323 MW)"},
+                ]
+            },
+        }
+        normalized = normalize_public_fuel_mix(payload, {})
+        self.assertFalse(normalized["simulated"])
+        self.assertEqual(normalized["source"], "MISO Public API")
+        self.assertEqual(len(normalized["data"]), 2)
+        self.assertEqual(normalized["data"][0]["fuelType"], "Coal")
+        self.assertEqual(normalized["data"][0]["value"], 30866.0)

@@ -2,8 +2,10 @@
 from copy import deepcopy
 
 MISO_BASE_URL = "https://apim.misoenergy.org"
+MISO_PUBLIC_BASE_URL = "https://public-api.misoenergy.org"
 AUTH_HEADER = "Ocp-Apim-Subscription-Key"
 PORTAL_URL = "https://data-exchange.misoenergy.org/apis"
+PUBLIC_API_DOCS_URL = "https://public-api.misoenergy.org/"
 
 
 def param(name, label, required=False, location="query", options=None, description=""):
@@ -148,14 +150,22 @@ CATALOG = [
         "id": "realtime_generation_fuel_type",
         "name": "Real-Time Generation Fuel Type",
         "group": "Load, generation & interchange",
-        "description": "Real-time generation by fuel type.",
+        "description": (
+            "Real-time generation by fuel type. Without a Data Exchange key this "
+            "operation uses MISO's public Fuel Mix display API (current interval)."
+        ),
         "method": "GET",
         "path": "/lgi/v1/real-time/{date}/generation/fuel-type",
+        # Public counterpart: anonymous Markets/Operations display feed.
+        # Different host and schema from Data Exchange; current interval only.
+        "public_path": "/api/FuelMix",
+        "public_documentation_url": PUBLIC_API_DOCS_URL,
         "unit": "MW",
         "documentation_url": PORTAL_URL,
         "keywords": ["fuel mix", "fuel type", "generation fuel", "generation mix"],
         "parameters": [
-            param("date", "Market date", True, "path"),
+            # Public Fuel Mix is a current-interval snapshot, so date is optional.
+            param("date", "Market date", False, "path", description="Optional context only; public Fuel Mix returns the current interval"),
             param("region", "Region", options=["NORTH", "CENTRAL", "SOUTH", "MISO", "NO_REGION"]),
             param("interval", "Specific interval"),
             param("pageNumber", "Page number"),
@@ -210,6 +220,15 @@ def endpoint(endpoint_id):
 def endpoint_for_web_source(source_id):
     """Return a supported backend operation for a known, catalog-issued ID."""
     return endpoint(WEB_SOURCE_TO_ENDPOINT_ID.get(source_id, ""))
+
+
+def supports_public(endpoint_item):
+    """True when this catalog operation has a mapped anonymous public MISO feed."""
+    return bool(endpoint_item and endpoint_item.get("public_path"))
+
+
+def public_endpoints():
+    return [item for item in CATALOG if item.get("public_path")]
 
 
 def select_endpoint(question):

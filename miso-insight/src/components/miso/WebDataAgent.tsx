@@ -118,7 +118,9 @@ export function WebDataAgent({ powerTrader = false, initialReport, initialApi }:
       ]);
       setConnection(nextConnection);
       setKeyState(nextKey);
-      if (nextConnection.miso_mode === "live") setMode("live");
+      if (nextConnection.miso_mode === "live" || nextConnection.miso_mode === "public") {
+        setMode(nextConnection.miso_mode);
+      }
     } catch {
       setConnection(null);
     }
@@ -228,7 +230,7 @@ export function WebDataAgent({ powerTrader = false, initialReport, initialApi }:
         <div className="flex flex-wrap items-center justify-self-end gap-2">
           <Button variant="ghost" size="sm" className="h-8 rounded-full px-2.5 text-[11.5px]" onClick={() => { setHistoryOpen(true); void refreshSavedSessions(); }}><History className="size-3.5" />History</Button>
           <Button asChild variant="ghost" size="sm" className="h-8 rounded-full px-2.5 text-[11.5px]"><Link to="/reports"><FileText className="size-3.5" />Reports</Link></Button>
-          <ModeToggle mode={mode} setMode={setMode} liveAvailable={connection?.miso_mode === "live"} />
+          <ModeToggle mode={mode} setMode={setMode} availableMode={connection?.miso_mode === "live" || connection?.miso_mode === "public" ? connection.miso_mode : null} />
         </div>
       </header>
 
@@ -293,13 +295,42 @@ export function WebDataAgent({ powerTrader = false, initialReport, initialApi }:
   );
 }
 
-function ModeToggle({ mode, setMode, liveAvailable }: { mode: LocalBackendMode; setMode: (mode: LocalBackendMode) => void; liveAvailable: boolean }) {
-  return <div className="flex rounded-full border bg-muted/20 p-0.5 text-[11px]"><button type="button" onClick={() => setMode("simulation")} className={cn("rounded-full px-2.5 py-1", mode === "simulation" && "bg-accent-soft text-accent")}>Simulation</button><button type="button" disabled={!liveAvailable} title={liveAvailable ? "Use configured MISO credentials" : "Configure MISO_SUBSCRIPTION_KEY in backend/.env first"} onClick={() => setMode("live")} className={cn("rounded-full px-2.5 py-1 disabled:cursor-not-allowed disabled:opacity-45", mode === "live" && "bg-success-soft text-success")}>Live MISO</button></div>;
+function ModeToggle({ mode, setMode, availableMode }: { mode: LocalBackendMode; setMode: (mode: LocalBackendMode) => void; availableMode: "live" | "public" | null }) {
+  const realLabel = availableMode === "live" ? "Live MISO" : "Public MISO";
+  const realTitle = availableMode === "live"
+    ? "Use configured MISO Data Exchange credentials"
+    : availableMode === "public"
+      ? "Use MISO's anonymous public Fuel Mix feed for supported endpoints"
+      : "Configure MISO_SUBSCRIPTION_KEY in backend/.env, or use a public-mapped endpoint";
+  return (
+    <div className="flex rounded-full border bg-muted/20 p-0.5 text-[11px]">
+      <button type="button" onClick={() => setMode("simulation")} className={cn("rounded-full px-2.5 py-1", mode === "simulation" && "bg-accent-soft text-accent")}>
+        Simulation
+      </button>
+      <button
+        type="button"
+        disabled={!availableMode}
+        title={realTitle}
+        onClick={() => availableMode && setMode(availableMode)}
+        className={cn(
+          "rounded-full px-2.5 py-1 disabled:cursor-not-allowed disabled:opacity-45",
+          (mode === "live" || mode === "public") && "bg-success-soft text-success",
+        )}
+      >
+        {realLabel}
+      </button>
+    </div>
+  );
 }
 
 function ConnectionCard({ keyState, connection, onRefresh }: { keyState: KeyState | null; connection: ConnectionState | null | undefined; onRefresh: () => Promise<void> }) {
   const checking = connection === undefined;
-  return <section className="rounded-3xl border bg-card p-5 shadow-soft"><div className="flex gap-3"><span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent"><KeyRound className="size-4" /></span><div><p className="text-[14px] font-medium">Web Agent</p><p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">{keyState?.configured ? "Subscription key configured server-side. The browser and local agent cannot read it." : "Use simulation now, or configure a subscription key in the web service environment."}</p></div></div><button type="button" onClick={() => void onRefresh()} className={cn("mt-4 w-full rounded-xl border px-3 py-2 text-left text-[12px] transition-colors hover:border-accent", checking ? "bg-muted/20 text-muted-foreground" : connection ? "border-success/25 bg-success-soft text-success" : "border-destructive/25 bg-destructive-soft text-destructive")}><ShieldCheck className="mr-1.5 inline size-3.5" />{checking ? "Checking web agent connection…" : connection ? `Web agent online · ${connection.miso_mode} mode` : "Web agent unavailable — refresh to retry"}</button><a href={keyState?.portal_url ?? "https://data-exchange.misoenergy.org/products"} target="_blank" rel="noreferrer" className="mt-4 inline-flex text-[12px] font-medium text-accent hover:underline">Manage subscription keys in MISO Data Exchange →</a></section>;
+  const helper = keyState?.configured
+    ? "Subscription key configured server-side. The browser and local agent cannot read it."
+    : connection?.miso_mode === "public"
+      ? "No Data Exchange key needed for Public MISO mode. Fuel Mix uses MISO's anonymous public API; other datasets stay simulated."
+      : "Use simulation now, or configure a subscription key in the web service environment.";
+  return <section className="rounded-3xl border bg-card p-5 shadow-soft"><div className="flex gap-3"><span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent"><KeyRound className="size-4" /></span><div><p className="text-[14px] font-medium">Web Agent</p><p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">{helper}</p></div></div><button type="button" onClick={() => void onRefresh()} className={cn("mt-4 w-full rounded-xl border px-3 py-2 text-left text-[12px] transition-colors hover:border-accent", checking ? "bg-muted/20 text-muted-foreground" : connection ? "border-success/25 bg-success-soft text-success" : "border-destructive/25 bg-destructive-soft text-destructive")}><ShieldCheck className="mr-1.5 inline size-3.5" />{checking ? "Checking web agent connection…" : connection ? `Web agent online · ${connection.miso_mode} mode` : "Web agent unavailable — refresh to retry"}</button><a href={keyState?.portal_url ?? "https://data-exchange.misoenergy.org/products"} target="_blank" rel="noreferrer" className="mt-4 inline-flex text-[12px] font-medium text-accent hover:underline">Manage subscription keys in MISO Data Exchange →</a></section>;
 }
 
 function ErrorCenter({ onRun505, running }: { onRun505: () => void; running: boolean }) {
