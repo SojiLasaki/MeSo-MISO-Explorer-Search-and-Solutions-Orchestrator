@@ -2,6 +2,14 @@
 
 REPORTS = [
     {
+        "id": "day_ahead_pricing_report",
+        "title": "Day-Ahead Pricing Readers’ Guide",
+        "url": "https://misodocs.blob.core.windows.net/marketreports/Day-Ahead%20Pricing_Day-Ahead%20Pricing%20Report%20Readers%20Guide.pdf",
+        "description": "Official Day-Ahead Pricing report reference. For the requested data response, the assistant switches to the catalog-backed Day-Ahead Ex-Post LMP API.",
+        "api_replacement": "day_ahead_lmp",
+        "terms": ["day-ahead pricing report", "day ahead pricing report", "day-ahead pricing", "day ahead pricing"],
+    },
+    {
         "id": "real_time_pricing_report",
         "title": "Real-Time Pricing Report Reader’s Guide",
         "url": "https://docs.misoenergy.org/marketreports/Real-Time%20Pricing%20Report_Real-Time%20Pricing%20Report%20Readers%20Guide.pdf",
