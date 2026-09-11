@@ -34,12 +34,32 @@ def _api_request_source(request_spec):
     }
 
 
+def _day_ahead_report_sources(question):
+    """Return the guide and the date-specific XLS report for day-ahead pricing."""
+    match = re.search(r"\b(20\d{2})[-/]?(\d{2})[-/]?(\d{2})\b", question)
+    report_date = "".join(match.groups()) if match else date.today().strftime("%Y%m%d")
+    return [
+        {
+            "title": "Day-Ahead Pricing Readers’ Guide",
+            "url": "https://misodocs.blob.core.windows.net/marketreports/Day-Ahead%20Pricing_Day-Ahead%20Pricing%20Report%20Readers%20Guide.pdf",
+        },
+        {
+            "title": f"Day-Ahead Pricing report · {report_date}_da_pr.xls",
+            "url": f"https://docs.misoenergy.org/marketreports/{report_date}_da_pr.xls",
+        },
+    ]
+
+
 def _ground_payload(question, payload):
     """Attach page-specific tariff citations without changing response content."""
     sources = list(payload.get("sources", []))
     for source in sources_for_question(question):
         if source not in sources:
             sources.append(source)
+    if re.search(r"\bday[ -]?ahead\b[\s\w-]{0,40}\b(pric(?:e|ing)|lmp)\b|\b(pric(?:e|ing)|lmp)\b[\s\w-]{0,40}\bday[ -]?ahead\b", question, re.I):
+        for source in _day_ahead_report_sources(question):
+            if source not in sources:
+                sources.append(source)
     if sources:
         payload["sources"] = sources
     return payload
@@ -117,20 +137,23 @@ def run_chat(question, session_id=None, mode=None, force_status=None, selected_s
 
     report = find_report(question) if "report" in question.lower() or "archive" in question.lower() else None
     if report:
-        replacement = catalog_endpoint(report["api_replacement"]) if report["api_replacement"] else None
-        message = report["description"]
-        if replacement:
-            message += f" The API-first replacement is {replacement['name']}."
-        payload = {
-            "session_id": session.session_id,
-            "status": "success",
-            "report": report,
-            "delivery": classify(question, "report"),
-            "message": message,
-            "events": [_event("intent", "success", "Identified a market-report request."), _event("report", "success", "Returned an official report reference and the supported API migration path.")],
-        }
-        AgentMessage.objects.create(session=session, role="assistant", content=payload["message"], payload=payload)
-        return _ground_payload(question, payload)
+        if report["id"] == "day_ahead_pricing_report":
+            report = None
+        else:
+            replacement = catalog_endpoint(report["api_replacement"]) if report["api_replacement"] else None
+            message = report["description"]
+            if replacement:
+                message += f" The API-first replacement is {replacement['name']}."
+            payload = {
+                "session_id": session.session_id,
+                "status": "success",
+                "report": report,
+                "delivery": classify(question, "report"),
+                "message": message,
+                "events": [_event("intent", "success", "Identified a market-report request."), _event("report", "success", "Returned an official report reference and the supported API migration path.")],
+            }
+            AgentMessage.objects.create(session=session, role="assistant", content=payload["message"], payload=payload)
+            return _ground_payload(question, payload)
 
     preferred_endpoint = endpoint_for_web_source(selected_source_id) if selected_source_id else None
     if selected_source_id and not preferred_endpoint:
@@ -324,7 +347,11 @@ def run_chat(question, session_id=None, mode=None, force_status=None, selected_s
         request.save(update_fields=["status_code"])
         APIResponse.objects.create(request=request, body=data)
         RequestHistory.objects.create(request=request, summary=f"{endpoint['name']} — {resolution['parameters'].get('date', '')}")
-        if simulated:
+        if resolution["endpoint"]["id"] == "day_ahead_lmp":
+            label = "The Day-Ahead Pricing report is available as reference; switching to the catalog-backed API. " + ("SIMULATED RESPONSE — no MISO request was sent." if simulated else "Retrieved from MISO Data Exchange API.")
+            source = "Development simulation" if simulated else "MISO Data Exchange API"
+            authentication = "not used in simulation" if simulated else "subscription key applied server-side"
+        elif simulated:
             label = "SIMULATED RESPONSE — no MISO request was sent."
             source = "Development simulation"
             authentication = "not used in simulation"
