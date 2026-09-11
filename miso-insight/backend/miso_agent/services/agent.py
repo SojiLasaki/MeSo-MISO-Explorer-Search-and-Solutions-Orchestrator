@@ -78,6 +78,22 @@ def _question_for(spec):
     return f"What {spec['label'].lower()} should I use?"
 
 
+def _illustrative_parameters(endpoint, parameters, today=None):
+    """Fill required fields with safe examples so documentation previews can render."""
+    today = today or date.today()
+    filled = dict(parameters)
+    for item in endpoint["parameters"]:
+        if not item["required"] or filled.get(item["name"]):
+            continue
+        if item["name"] == "date":
+            filled["date"] = (today - timedelta(days=1)).isoformat()
+        elif item.get("options"):
+            filled[item["name"]] = item["options"][0]
+        elif item["name"] == "pageNumber":
+            filled["pageNumber"] = "1"
+    return filled
+
+
 def _summary(data):
     rows = data.get("data", []) if isinstance(data, dict) else []
     values = [row.get("value") for row in rows if isinstance(row, dict) and isinstance(row.get("value"), (int, float))]
@@ -237,15 +253,27 @@ def run_chat(question, session_id=None, mode=None, force_status=None, selected_s
         _event("parameters", "success", "Resolved official MISO parameter values from your message and prior context."),
     ])
     delivery = classify(question, resolution["intent"])
-    session.context = {"endpoint": endpoint, "parameters": resolution["parameters"], "intent": resolution["intent"]}
+    parameters = dict(resolution["parameters"])
+    used_illustrative = False
+    if resolution["missing"] and resolution["intent"] == "api_request":
+        parameters = _illustrative_parameters(endpoint, parameters)
+        used_illustrative = True
+        events.append(
+            _event(
+                "parameters",
+                "success",
+                "Using illustrative example values for the API documentation preview; no MISO call was made.",
+            )
+        )
+    session.context = {"endpoint": endpoint, "parameters": parameters, "intent": resolution["intent"]}
     session.save(update_fields=["context", "updated_at"])
 
-    if resolution["missing"]:
+    if resolution["missing"] and resolution["intent"] != "api_request":
         missing = [{**item, "question": _question_for(item)} for item in resolution["missing"]]
         action = "before I can send this secure integration instruction to your local agent" if delivery["requires_local_agent"] else "before I can call MISO"
         payload = {
             "session_id": session.session_id, "status": "needs_input", "intent": resolution["intent"],
-            "endpoint": endpoint, "parameters": resolution["parameters"], "missing_parameters": missing,
+            "endpoint": endpoint, "parameters": parameters, "missing_parameters": missing,
             "delivery": delivery,
             "message": f"{missing[0]['question']} I need this {action}.",
             "events": events + [_event("parameters", "warning", "Paused before making an invalid request or local handoff.")],
@@ -253,12 +281,12 @@ def run_chat(question, session_id=None, mode=None, force_status=None, selected_s
         AgentMessage.objects.create(session=session, role="assistant", content=payload["message"], payload=payload)
         return _ground_payload(question, payload)
 
-    issues = validate(endpoint, resolution["parameters"])
+    issues = validate(endpoint, parameters)
     if issues:
-        preview_spec = build(endpoint, resolution["parameters"])
+        preview_spec = build(endpoint, parameters)
         payload = {
             "session_id": session.session_id, "status": "validation_error", "endpoint": endpoint,
-            "parameters": resolution["parameters"], "request": preview_spec, "issues": issues,
+            "parameters": parameters, "request": preview_spec, "issues": issues,
             "delivery": delivery,
             "message": "I found a parameter that needs correction before MISO is called.",
             "events": events + [_event("validation", "error", "Parameter validation failed; no MISO request was sent.")],
@@ -272,19 +300,19 @@ def run_chat(question, session_id=None, mode=None, force_status=None, selected_s
         chosen_mode = "simulation"
         events.append(_event("availability", "warning", "This dataset is not on MISO's anonymous public API yet; using labeled simulation."))
     prefer_public = chosen_mode == "public" or (chosen_mode == "live" and supports_public(endpoint))
-    request_spec = build(endpoint, resolution["parameters"], prefer_public=prefer_public)
+    request_spec = build(endpoint, parameters, prefer_public=prefer_public)
 
     if resolution["intent"] == "integration_guidance":
-        request = APIRequest.objects.create(session=session, source_id=endpoint["id"], method=request_spec["method"], url=request_spec["url"], parameters=resolution["parameters"], mode="template")
+        request = APIRequest.objects.create(session=session, source_id=endpoint["id"], method=request_spec["method"], url=request_spec["url"], parameters=parameters, mode="template")
         RequestHistory.objects.create(request=request, summary=f"Integration template — {endpoint['name']}")
-        handoff = queue_handoff(endpoint, resolution["parameters"], request_spec, "integration_template")
+        handoff = queue_handoff(endpoint, parameters, request_spec, "integration_template")
         payload = {
             "session_id": session.session_id,
             "status": "success",
             "intent": resolution["intent"],
             "integration_guidance": True,
             "endpoint": endpoint,
-            "parameters": resolution["parameters"],
+            "parameters": parameters,
             "request": request_spec,
             "delivery": delivery,
             "handoff": handoff,
@@ -298,25 +326,34 @@ def run_chat(question, session_id=None, mode=None, force_status=None, selected_s
         return _ground_payload(question, payload)
 
     if resolution["intent"] == "api_request":
-        request = APIRequest.objects.create(session=session, source_id=endpoint["id"], method=request_spec["method"], url=request_spec["url"], parameters=resolution["parameters"], mode="preview")
-        RequestHistory.objects.create(request=request, summary=f"API request preview — {endpoint['name']}")
+        request = APIRequest.objects.create(session=session, source_id=endpoint["id"], method=request_spec["method"], url=request_spec["url"], parameters=parameters, mode="preview")
+        RequestHistory.objects.create(request=request, summary=f"API documentation preview — {endpoint['name']}")
+        example_note = (
+            f" Example values ({', '.join(f'{key}={value}' for key, value in parameters.items())}) are shown for the request/code samples only."
+            if used_illustrative
+            else ""
+        )
         payload = {
             "session_id": session.session_id,
             "status": "success",
             "intent": resolution["intent"],
             "api_only": True,
             "endpoint": endpoint,
-            "parameters": resolution["parameters"],
+            "parameters": parameters,
             "request": request_spec,
             "delivery": delivery,
-            "message": f"Here is the validated {endpoint['name']} API request. It has not been executed.",
-            "verification": {"tested": False, "status_code": None, "source": "Catalog-backed request preview", "authentication": "subscription key will be applied server-side only when executed"},
-            "events": events + [_event("validation", "success", "Required parameters are complete and valid."), _event("request", "success", "Generated a redacted request preview; no local handoff is needed.")],
+            "message": (
+                f"Here is the catalog documentation for {endpoint['name']}: endpoint, parameters, auth, "
+                f"time basis, pagination, example request/response shape, and copyable code samples.{example_note} "
+                "No MISO call was executed."
+            ),
+            "verification": {"tested": False, "status_code": None, "source": "Catalog-backed API documentation preview", "authentication": "subscription key will be applied server-side only when executed"},
+            "events": events + [_event("validation", "success", "Catalog metadata assembled for documentation."), _event("request", "success", "Generated a redacted request preview; no local handoff is needed.")],
         }
         AgentMessage.objects.create(session=session, role="assistant", content=payload["message"], payload=payload)
         return _ground_payload(question, payload)
 
-    request = APIRequest.objects.create(session=session, source_id=endpoint["id"], method=request_spec["method"], url=request_spec["url"], parameters=resolution["parameters"], mode=chosen_mode)
+    request = APIRequest.objects.create(session=session, source_id=endpoint["id"], method=request_spec["method"], url=request_spec["url"], parameters=parameters, mode=chosen_mode)
     auth_note = (
         "Public MISO feed; no subscription key used."
         if prefer_public
@@ -331,10 +368,10 @@ def run_chat(question, session_id=None, mode=None, force_status=None, selected_s
         advice, error = _record_failure(request, int(force_status), {"simulated": True, "message": "Intentional diagnostic response."})
         request.status_code = int(force_status)
         request.save(update_fields=["status_code"])
-        handoff = queue_handoff(endpoint, resolution["parameters"], request_spec, "error_resolution", troubleshooting=advice)
+        handoff = queue_handoff(endpoint, parameters, request_spec, "error_resolution", troubleshooting=advice)
         error_delivery = classify(question, resolution["intent"], error=True)
         payload = {
-            "session_id": session.session_id, "status": "error", "endpoint": endpoint, "parameters": resolution["parameters"],
+            "session_id": session.session_id, "status": "error", "endpoint": endpoint, "parameters": parameters,
             "request": request_spec, "error": advice, "error_id": error.id, "delivery": error_delivery, "handoff": handoff, "message": f"HTTP {force_status}: {advice['what_happened']}",
             "events": events + [_event("api", "error", f"Received HTTP {force_status} in diagnostic mode."), _event("troubleshooting", "success", "The web agent produced a safe remediation plan."), _event("handoff", "success", "The web agent queued the safe diagnosis for the local agent.")],
         }
@@ -342,11 +379,11 @@ def run_chat(question, session_id=None, mode=None, force_status=None, selected_s
         return _ground_payload(question, payload)
 
     try:
-        status, data, simulated = execute(request_spec, endpoint, resolution["parameters"], chosen_mode)
+        status, data, simulated = execute(request_spec, endpoint, parameters, chosen_mode)
         request.status_code = status
         request.save(update_fields=["status_code"])
         APIResponse.objects.create(request=request, body=data)
-        RequestHistory.objects.create(request=request, summary=f"{endpoint['name']} — {resolution['parameters'].get('date', '')}")
+        RequestHistory.objects.create(request=request, summary=f"{endpoint['name']} — {parameters.get('date', '')}")
         if resolution["endpoint"]["id"] == "day_ahead_lmp":
             label = "The Day-Ahead Pricing report is available as reference; switching to the catalog-backed API. " + ("SIMULATED RESPONSE — no MISO request was sent." if simulated else "Retrieved from MISO Data Exchange API.")
             source = "Development simulation" if simulated else "MISO Data Exchange API"
@@ -372,7 +409,7 @@ def run_chat(question, session_id=None, mode=None, force_status=None, selected_s
             response_sources.append(_api_request_source(request_spec))
         payload = {
             "session_id": session.session_id, "status": "success", "intent": resolution["intent"], "endpoint": endpoint,
-            "parameters": resolution["parameters"], "request": request_spec, "data": data, "summary": _summary(data), "simulated": simulated,
+            "parameters": parameters, "request": request_spec, "data": data, "summary": _summary(data), "simulated": simulated,
             "sources": response_sources,
             "delivery": delivery,
             "chart_requested": resolution["chart_requested"],
@@ -388,10 +425,10 @@ def run_chat(question, session_id=None, mode=None, force_status=None, selected_s
         request.status_code = exc.status
         request.save(update_fields=["status_code"])
         advice, error = _record_failure(request, exc.status, exc.body)
-        handoff = queue_handoff(endpoint, resolution["parameters"], request_spec, "error_resolution", troubleshooting=advice)
+        handoff = queue_handoff(endpoint, parameters, request_spec, "error_resolution", troubleshooting=advice)
         error_delivery = classify(question, resolution["intent"], error=True)
         payload = {
-            "session_id": session.session_id, "status": "error", "endpoint": endpoint, "parameters": resolution["parameters"],
+            "session_id": session.session_id, "status": "error", "endpoint": endpoint, "parameters": parameters,
             "request": request_spec, "error": advice, "error_id": error.id, "delivery": error_delivery, "handoff": handoff, "message": f"HTTP {exc.status}: {advice['what_happened']}",
             "events": events + [_event("api", "error", f"MISO request failed with HTTP {exc.status}."), _event("troubleshooting", "success", "The web agent produced a safe remediation plan."), _event("handoff", "success", "The web agent queued the safe diagnosis for the local agent.")],
         }

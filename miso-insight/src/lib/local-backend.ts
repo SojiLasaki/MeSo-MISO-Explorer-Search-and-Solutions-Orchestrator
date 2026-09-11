@@ -34,13 +34,20 @@ export interface AgentResult {
   status: "success" | "needs_input" | "validation_error" | "error" | "ignored";
   message: string;
   sources?: Array<{ title: string; url?: string; page?: number; document?: string; request_json?: { method: string; url: string; params: Record<string, string> } }>;
-  endpoint?: { id: string; name: string; unit: string; parameters: Array<{ name: string; label: string; required: boolean; options: string[] }> };
+  endpoint?: { id: string; name: string; unit: string; documentation_url?: string; parameters: Array<{ name: string; label: string; required: boolean; options: string[] }> };
   parameters?: Record<string, string>;
   missing_parameters?: Array<{ name: string; label: string; question: string }>;
   request?: { method: string; url: string; endpoint: string; params: Record<string, string>; headers: Record<string, string> };
   events: AgentEvent[];
   summary?: { peak: number; average: number; minimum: number; records: number };
-  data?: { data?: Array<Record<string, string | number>>; simulated?: boolean };
+  data?: {
+    data?: Array<Record<string, string | number | null>>;
+    simulated?: boolean;
+    source?: string;
+    refId?: string;
+    totalMW?: string | number;
+    raw?: unknown;
+  };
   simulated?: boolean;
   api_only?: boolean;
   integration_guidance?: boolean;

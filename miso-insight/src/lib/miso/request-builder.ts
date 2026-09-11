@@ -78,7 +78,7 @@ page=1
 while :; do
   response="$(curl -sS --fail-with-body --retry 3 --retry-delay 1 --get "${url}" \\
     --data-urlencode "${pageParam}=$page" \\
-    -H "${header}: ${SUBSCRIPTION_KEY_PLACEHOLDER}" \\
+    -H "${header}: $MISO_SUBSCRIPTION_KEY" \\
     -H "Accept: application/json")"
   printf '%s\\n' "$response" > "miso-page-\${page}.json"
   last_page="$(printf '%s' "$response" | jq -r '.page.lastPage // true')"
@@ -195,7 +195,7 @@ export function toApiRequestSpec(
       : [
           {
             language: "cURL",
-            code: `curl -sS --get "${built.url}" \\\n  -H "${CATALOG_META.authHeader}: ${SUBSCRIPTION_KEY_PLACEHOLDER}" \\\n  -H "Accept: application/json"`,
+            code: `curl -sS --get "${built.url}" \\\n  -H "${CATALOG_META.authHeader}: $MISO_SUBSCRIPTION_KEY" \\\n  -H "Accept: application/json"`,
           },
           {
             language: "Python",

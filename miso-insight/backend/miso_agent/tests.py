@@ -4,9 +4,9 @@ from datetime import date, timedelta
 
 from .services.errors import diagnose
 from .services.request_builder import build, validate
-from .services.resolver import resolve
+from .services.access_policy import classify_access
 from .services.handoff import verify
-from .services.access_policy import classify_access, is_clearly_out_of_scope
+from .services.resolver import is_obviously_out_of_scope, resolve
 from .models import LocalAgentHandoff
 
 
@@ -27,6 +27,63 @@ class ParameterResolutionTests(TestCase):
         result = resolve("I need actual load")
         self.assertEqual([item["name"] for item in result["missing"]], ["date"])
 
+    def test_api_docs_request_does_not_require_date_first(self):
+        from unittest.mock import patch
+        with patch("miso_agent.services.resolver._gemini_resolution", return_value=None):
+            result = resolve("I need the API docs for actual load")
+        self.assertEqual(result["endpoint"]["id"], "actual_load")
+        self.assertEqual(result["intent"], "api_request")
+        self.assertEqual([item["name"] for item in result["missing"]], ["date"])
+
+    def test_retrieve_follow_up_leaves_api_docs_mode(self):
+        from unittest.mock import patch
+        context = {
+            "endpoint": {"id": "actual_load", "name": "Actual Load", "parameters": []},
+            "parameters": {"date": "2026-09-08"},
+            "intent": "api_request",
+        }
+        with patch("miso_agent.services.resolver._gemini_resolution", return_value=None):
+            result = resolve(
+                "Retrieve Actual Load data for yesterday",
+                context=context,
+                today=date(2026, 9, 9),
+            )
+        self.assertEqual(result["intent"], "retrieve_data")
+        self.assertEqual(result["parameters"]["date"], "2026-09-08")
+        self.assertEqual(result["missing"], [])
+
+    def test_model_cannot_invent_today_for_missing_date(self):
+        """Gemini often defaults date to today; the guardrail must still ask."""
+        invented = {
+            "relevant": True,
+            "endpoint_id": "actual_load",
+            "intent": "retrieve_data",
+            "parameters": {"date": date.today().isoformat()},
+            "chart_requested": False,
+            "policy_category": "public",
+        }
+        from unittest.mock import patch
+        with patch("miso_agent.services.resolver._gemini_resolution", return_value=invented):
+            result = resolve("Show me actual load")
+        self.assertEqual(result["endpoint"]["id"], "actual_load")
+        self.assertNotIn("date", result["parameters"])
+        self.assertEqual([item["name"] for item in result["missing"]], ["date"])
+
+    def test_model_date_kept_when_user_stated_today(self):
+        invented = {
+            "relevant": True,
+            "endpoint_id": "actual_load",
+            "intent": "retrieve_data",
+            "parameters": {"date": "2026-09-10"},
+            "chart_requested": False,
+            "policy_category": "public",
+        }
+        from unittest.mock import patch
+        with patch("miso_agent.services.resolver._gemini_resolution", return_value=invented):
+            result = resolve("Show me actual load for today", today=date(2026, 9, 10))
+        self.assertEqual(result["parameters"]["date"], "2026-09-10")
+        self.assertEqual(result["missing"], [])
+
     def test_request_builder_keeps_key_out_of_url(self):
         result = resolve("actual load yesterday", today=date(2026, 9, 9))
         request = build(result["endpoint"], result["parameters"])
@@ -43,7 +100,7 @@ class ParameterResolutionTests(TestCase):
         self.assertEqual(classify_access("What are the real-time electricity prices in MISO right now?"), "portal")
 
     def test_arithmetic_is_out_of_scope(self):
-        self.assertTrue(is_clearly_out_of_scope("what is 1 + 1"))
+        self.assertTrue(is_obviously_out_of_scope("what is 1 + 1"))
 
 
 class TroubleshootingTests(TestCase):
@@ -82,6 +139,21 @@ class ApiFlowTests(TestCase):
         self.assertEqual(second.data["status"], "success")
         self.assertEqual(second.data["endpoint"]["id"], "actual_load")
         self.assertIn("date", second.data["parameters"])
+
+    def test_api_docs_chat_returns_preview_without_asking_for_date(self):
+        from unittest.mock import patch
+        with patch("miso_agent.services.resolver._gemini_resolution", return_value=None):
+            response = self.client.post(
+                "/api/chat/",
+                {"question": "I need the API docs for power usage", "mode": "simulation"},
+                format="json",
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["status"], "success")
+        self.assertTrue(response.data["api_only"])
+        self.assertEqual(response.data["endpoint"]["id"], "actual_load")
+        self.assertIn("date", response.data["parameters"])
+        self.assertIn("documentation", response.data["message"].lower())
 
     def test_chat_sessions_are_listed_and_reopenable(self):
         created = self.client.post("/api/chat/", {"question": "actual load yesterday", "mode": "simulation"}, format="json")

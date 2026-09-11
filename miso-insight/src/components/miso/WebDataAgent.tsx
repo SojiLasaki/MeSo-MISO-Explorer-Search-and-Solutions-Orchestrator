@@ -27,15 +27,23 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { SemanticVisualization } from "@/components/miso/semantics/SemanticVisualization";
+import { ApiDocsAnswer } from "@/components/miso/ApiDocsAnswer";
 import type { CatalogOperation } from "@/lib/miso/catalog";
+import { buildAgentApiDocs } from "@/lib/miso/agent-api-docs";
+import {
+  buildSemanticView,
+  downloadReadableCsv,
+} from "@/lib/miso/semantics";
 import { cn } from "@/lib/utils";
 import { localAgentDownloadUrl, localApi, type AgentResult, type ConnectionState, type KeyState, type LocalBackendMode } from "@/lib/local-backend";
 
 const generalPrompts = [
+  "I need the API docs for actual load",
+  "Show me actual load",
   "What was the actual load yesterday?",
   "Give me hourly power usage for the North region yesterday.",
   "Show me today’s market prices.",
-  "Give me the API for actual load yesterday.",
 ];
 
 const PTD_ENDPOINT_IDS = new Set([
@@ -313,17 +321,20 @@ export function WebDataAgent({ powerTrader = false, initialReport, initialApi }:
           )}
 
           {history.length > 0 && <div className="mx-auto max-w-4xl space-y-4 pt-4">
-            {history.map((turn, index) => (
+            {history.map((turn, index) => {
+              const priorQuestion = [...history.slice(0, index)].reverse().find((item) => item.role === "user")?.text ?? "";
+              return (
               <div key={index} className={cn("max-w-[88%] rounded-2xl px-4 py-3 text-[13px] leading-relaxed", turn.role === "user" ? "ml-auto bg-primary text-primary-foreground" : "border bg-card/90 text-foreground shadow-soft")}>
                 <p className="mb-1 text-[10px] font-medium uppercase tracking-[0.1em] opacity-65">{turn.role === "user" ? "You" : "MeSo"}</p>
                 <p>{turn.text}</p>
-                {turn.result && <div className="mt-4 border-t border-border/60 pt-4"><ResultPanel result={turn.result} detailsOpen={detailsOpen} setDetailsOpen={setDetailsOpen} onQuickReply={(text) => void send(text)} />{turn.result.handoff && <LocalAgentHandoff handoff={turn.result.handoff} />}<div className="mt-4"><AgentTimeline events={turn.result.events ?? []} statusLabel={agentStatusLabel(turn.result)} /></div></div>}
+                {turn.result && <div className="mt-4 border-t border-border/60 pt-4"><ResultPanel result={turn.result} question={priorQuestion} detailsOpen={detailsOpen} setDetailsOpen={setDetailsOpen} onQuickReply={(text) => void send(text)} />{turn.result.handoff && <LocalAgentHandoff handoff={turn.result.handoff} />}<div className="mt-4"><AgentTimeline events={turn.result.events ?? []} statusLabel={agentStatusLabel(turn.result)} /></div></div>}
               </div>
-            ))}
+              );
+            })}
             {running && <div className="flex items-center gap-2 text-[12.5px] text-muted-foreground"><Loader2 className="size-4 animate-spin text-accent" /> Agent is resolving parameters and preparing a request…</div>}
           </div>}
 
-          {result && history.length === 0 && <section className="mx-auto mt-5 grid max-w-6xl gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(300px,0.8fr)]"><div className="rounded-3xl border bg-card p-5 shadow-soft sm:p-6"><ResultPanel result={result} detailsOpen={detailsOpen} setDetailsOpen={setDetailsOpen} onQuickReply={(text) => void send(text)} /></div><AgentTimeline events={result.events ?? []} statusLabel={agentStatusLabel(result)} /></section>}
+          {result && history.length === 0 && <section className="mx-auto mt-5 grid max-w-6xl gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(300px,0.8fr)]"><div className="rounded-3xl border bg-card p-5 shadow-soft sm:p-6"><ResultPanel result={result} question="" detailsOpen={detailsOpen} setDetailsOpen={setDetailsOpen} onQuickReply={(text) => void send(text)} /></div><AgentTimeline events={result.events ?? []} statusLabel={agentStatusLabel(result)} /></section>}
 
           {result?.error && <section className="mx-auto mt-5 max-w-6xl rounded-3xl border border-destructive/25 bg-card p-5 shadow-soft sm:p-6"><button type="button" onClick={() => setErrorOpen((open) => !open)} className="flex w-full items-center justify-between text-left"><span className="flex items-center gap-2 text-[15px] font-medium"><CircleAlert className="size-4 text-destructive" /> Error Center — HTTP {result.error.status_code}</span><ChevronDown className={cn("size-4 transition-transform", errorOpen && "rotate-180")} /></button>{errorOpen && <ErrorDiagnosis error={result.error} request={result.request} />}</section>}
         </div>
@@ -381,35 +392,118 @@ function ErrorCenter({ onRun505, running }: { onRun505: () => void; running: boo
   return <section className="rounded-3xl border bg-card p-5 shadow-soft"><div className="flex gap-3"><span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-destructive-soft text-destructive"><TerminalSquare className="size-4" /></span><div><p className="text-[14px] font-medium">505 Error Center</p><p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">Trigger an intentional HTTP Version Not Supported response. The web agent diagnoses it and sends only safe remediation instructions to the local agent.</p></div></div><Button variant="outline" size="sm" className="mt-4 w-full rounded-xl" disabled={running} onClick={onRun505}><Play className="size-3.5" />Simulate HTTP 505</Button></section>;
 }
 
-function downloadCsv(result: AgentResult) {
-  const data = result.data?.data ?? [];
-  if (!data.length) return;
-  const columns = Array.from(new Set(data.flatMap((row) => Object.keys(row))));
-  const escape = (value: unknown) => `"${String(value ?? "").replaceAll('"', '""')}"`;
-  const csv = [columns, ...data.map((row) => columns.map((column) => row[column]))].map((row) => row.map(escape).join(",")).join("\r\n");
-  const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" });
-  const href = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = href;
-  anchor.download = `${result.endpoint?.id ?? "miso-data"}-${result.parameters?.date ?? "export"}.csv`;
-  anchor.click();
-  URL.revokeObjectURL(href);
+function downloadCsv(result: AgentResult, question = "") {
+  downloadReadableCsv(result, question);
 }
 
-function ResultPanel({ result, detailsOpen, setDetailsOpen, onQuickReply }: { result: AgentResult; detailsOpen: boolean; setDetailsOpen: (open: boolean) => void; onQuickReply: (text: string) => void }) {
+function MissingParameterPrompt({
+  missing,
+  message,
+  onQuickReply,
+}: {
+  missing: NonNullable<AgentResult["missing_parameters"]>;
+  message?: string;
+  onQuickReply: (text: string) => void;
+}) {
+  const [customDate, setCustomDate] = useState("");
+  const needsDate = missing.some((item) => item.name === "date");
+  return (
+    <div className="mt-5 rounded-2xl border border-accent/20 bg-accent-soft/25 p-4">
+      <p className="text-[13px] font-medium">One detail is needed before I can continue.</p>
+      {message ? <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">{message}</p> : null}
+      {needsDate ? (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <button type="button" onClick={() => onQuickReply("today")} className="rounded-full border bg-card px-3 py-1.5 text-[12px] hover:border-accent">
+            Today
+          </button>
+          <button type="button" onClick={() => onQuickReply("yesterday")} className="rounded-full border bg-card px-3 py-1.5 text-[12px] hover:border-accent">
+            Yesterday
+          </button>
+          <label className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-[12px]">
+            <span className="text-muted-foreground">Pick a date</span>
+            <input
+              type="date"
+              value={customDate}
+              onChange={(event) => setCustomDate(event.target.value)}
+              className="bg-transparent text-[12px] outline-none"
+            />
+          </label>
+          <button
+            type="button"
+            disabled={!customDate}
+            onClick={() => onQuickReply(customDate)}
+            className="rounded-full border bg-card px-3 py-1.5 text-[12px] hover:border-accent disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Use selected date
+          </button>
+        </div>
+      ) : (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {missing.map((item) => (
+            <span key={item.name} className="rounded-full border bg-card px-3 py-1.5 text-[12px] text-muted-foreground">
+              {item.label}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ResultPanel({
+  result,
+  question,
+  detailsOpen,
+  setDetailsOpen,
+  onQuickReply,
+}: {
+  result: AgentResult;
+  question: string;
+  detailsOpen: boolean;
+  setDetailsOpen: (open: boolean) => void;
+  onQuickReply: (text: string) => void;
+}) {
+  const semantic = result.data?.data?.length ? buildSemanticView(result, question) : null;
   const rows = result.data?.data?.slice(0, 6) ?? [];
   const allRows = result.data?.data ?? [];
   const handoffHref = ptdHandoffHref(result);
-  return <><div className="flex flex-wrap items-start justify-between gap-3"><div>{(result.endpoint?.name || result.report?.title) && <h2 className="text-[20px] font-medium">{result.endpoint?.name ?? result.report?.title}</h2>}</div>{typeof result.verification?.status_code === "number" && <span className="flex items-center gap-1.5 text-[11.5px] text-success"><CheckCircle2 className="size-3.5" />HTTP {result.verification.status_code}</span>}</div>
+  const awaitingInput = Boolean(result.missing_parameters?.length);
+  const apiDocs =
+    result.api_only && result.endpoint?.id
+      ? buildAgentApiDocs({
+          endpointId: result.endpoint.id,
+          endpointName: result.endpoint.name,
+          parameters: result.parameters,
+          documentationUrl: result.endpoint.documentation_url,
+        })
+      : null;
+  return <><div className="flex flex-wrap items-start justify-between gap-3"><div>{(result.endpoint?.name || result.report?.title) && <h2 className="text-[20px] font-medium">{result.endpoint?.name ?? result.report?.title}</h2>}{result.message && !awaitingInput ? <p className="mt-1 text-[13px] text-muted-foreground">{result.message}</p> : null}</div>{typeof result.verification?.status_code === "number" && <span className="flex items-center gap-1.5 text-[11.5px] text-success"><CheckCircle2 className="size-3.5" />HTTP {result.verification.status_code}</span>}</div>
   {result.sources && result.sources.length > 0 && <div className="mt-4 rounded-2xl border bg-muted/10 p-3"><p className="text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground">Sources</p><div className="mt-2 flex flex-wrap gap-2">{result.sources.map((source, index) => { const label = source.page ? `${source.title} · PDF p. ${source.page}` : source.title; return <div key={`${source.title}-${index}`} className="flex flex-col gap-2">{source.url ? <a href={source.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-lg border bg-card px-2.5 py-1.5 text-[11.5px] font-medium text-accent hover:border-accent">{label}<ArrowUpRight className="size-3" /></a> : <span title={source.document} className="inline-flex items-center gap-1 rounded-lg border bg-card px-2.5 py-1.5 text-[11.5px] font-medium text-foreground">{label}</span>}{source.request_json && <details className="rounded-lg border bg-card px-2.5 py-1.5 text-[10.5px]"><summary className="cursor-pointer font-medium text-muted-foreground">View JSON request</summary><pre className="mt-2 max-w-full overflow-auto whitespace-pre-wrap text-[10px] leading-relaxed">{JSON.stringify(source.request_json, null, 2)}</pre></details>}</div>; })}</div></div>}
   {result.access_request && <div className="mt-5 rounded-2xl border border-dashed bg-muted/30 p-4"><p className="text-[13px] font-medium">Access request email generated</p><p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">{result.access_request.timeline}</p><a className="mt-3 inline-flex rounded-lg border bg-card px-3 py-1.5 text-[12px] font-medium" href={`mailto:${result.access_request.recipient}?subject=${encodeURIComponent(result.access_request.subject)}&body=${encodeURIComponent(result.access_request.body)}`}>Open email draft</a></div>}
   {result.report && <div className="mt-5 rounded-2xl border bg-muted/20 p-4"><p className="text-[12px] leading-relaxed text-muted-foreground">{result.report.description}</p><a href={result.report.url} target="_blank" rel="noreferrer" className="mt-3 inline-flex text-[12px] font-medium text-accent hover:underline">Open official MISO report →</a></div>}
-  {result.missing_parameters && <div className="mt-5 rounded-2xl border border-accent/20 bg-accent-soft/25 p-4"><p className="text-[13px] font-medium">One detail is needed before I can continue.</p><div className="mt-3 flex flex-wrap gap-2">{result.missing_parameters.map((item) => <button key={item.name} type="button" onClick={() => onQuickReply("yesterday")} className="rounded-full border bg-card px-3 py-1.5 text-[12px] hover:border-accent">Use yesterday</button>)}</div><p className="mt-3 text-[12px] text-muted-foreground">{result.message}</p></div>}
-  {result.summary && <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">{Object.entries(result.summary).map(([label, value]) => <div key={label} className="rounded-xl border bg-muted/20 p-3"><p className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</p><p className="mt-1 text-[16px] font-medium">{typeof value === "number" ? value.toLocaleString() : value}</p></div>)}</div>}
+  {awaitingInput && result.missing_parameters ? <MissingParameterPrompt missing={result.missing_parameters} message={result.message} onQuickReply={onQuickReply} /> : null}
+
+  {apiDocs ? <ApiDocsAnswer docs={apiDocs} onCallApi={onQuickReply} /> : null}
+
+  {apiDocs ? null : semantic ? (
+    <>
+      <SemanticVisualization dataset={semantic.dataset} plan={semantic.plan} />
+      <div className="mt-3 flex justify-end">
+        <button type="button" onClick={() => downloadCsv(result, question)} className="inline-flex items-center gap-1.5 rounded-lg border bg-card px-2.5 py-1.5 text-[11.5px] font-medium text-accent hover:border-accent">
+          <Download className="size-3.5" />Download CSV
+        </button>
+      </div>
+    </>
+  ) : (
+    <>
+      {result.summary && <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">{Object.entries(result.summary).map(([label, value]) => <div key={label} className="rounded-xl border bg-muted/20 p-3"><p className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</p><p className="mt-1 text-[16px] font-medium">{typeof value === "number" ? value.toLocaleString() : value}</p></div>)}</div>}
+      {result.chart_requested && rows.length > 1 && <MiniChart rows={result.data?.data ?? []} />}
+      {rows.length > 0 && <div className="mt-5 overflow-hidden rounded-2xl border"><div className="flex items-center justify-between border-b bg-muted/25 px-3 py-2"><span className="text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground">Preview · {allRows.length.toLocaleString()} rows</span><button type="button" onClick={() => downloadCsv(result, question)} className="inline-flex items-center gap-1.5 rounded-lg border bg-card px-2.5 py-1.5 text-[11.5px] font-medium text-accent hover:border-accent"><Download className="size-3.5" />Download CSV</button></div><div className="grid grid-cols-3 border-b bg-muted/25 px-3 py-2 text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground"><span>Market date</span><span>Interval</span><span>Value</span></div>{rows.map((row, index) => <div key={index} className="grid grid-cols-3 border-b px-3 py-2 text-[12px] last:border-0"><span>{String(row.marketDate ?? "—")}</span><span>{String(row.interval ?? "—")}</span><span>{Number(row.value ?? 0).toLocaleString()}</span></div>)}</div>}
+    </>
+  )}
+
   {handoffHref && <a href={handoffHref} className="mt-5 flex items-center justify-between gap-3 rounded-2xl border border-dashed bg-accent-soft/20 px-4 py-3 transition-colors hover:bg-accent-soft/35"><div><p className="text-[13px] font-medium">Open in PTD Infographcs</p><p className="mt-0.5 text-[11.5px] leading-relaxed text-muted-foreground">Transfer this non-secret endpoint and its resolved parameters to the separate chart workspace.</p></div><ArrowUpRight className="size-4 shrink-0 text-accent" /></a>}
-  {result.chart_requested && rows.length > 1 && <MiniChart rows={result.data?.data ?? []} />}
-  {rows.length > 0 && <div className="mt-5 overflow-hidden rounded-2xl border"><div className="flex items-center justify-between border-b bg-muted/25 px-3 py-2"><span className="text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground">Preview · {allRows.length.toLocaleString()} rows</span><button type="button" onClick={() => downloadCsv(result)} className="inline-flex items-center gap-1.5 rounded-lg border bg-card px-2.5 py-1.5 text-[11.5px] font-medium text-accent hover:border-accent"><Download className="size-3.5" />Download CSV</button></div><div className="grid grid-cols-3 border-b bg-muted/25 px-3 py-2 text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground"><span>Market date</span><span>Interval</span><span>Value</span></div>{rows.map((row, index) => <div key={index} className="grid grid-cols-3 border-b px-3 py-2 text-[12px] last:border-0"><span>{String(row.marketDate ?? "—")}</span><span>{String(row.interval ?? "—")}</span><span>{Number(row.value ?? 0).toLocaleString()}</span></div>)}</div>}
-  {result.request && <div className="mt-5 overflow-hidden rounded-2xl border"><button type="button" onClick={() => setDetailsOpen(!detailsOpen)} className="flex w-full items-center justify-between px-4 py-3 text-left text-[13px] font-medium"><span className="flex items-center gap-2"><Code2 className="size-3.5 text-accent" /> Request verification</span><ChevronDown className={cn("size-4 transition-transform", detailsOpen && "rotate-180")} /></button>{detailsOpen && <div className="border-t bg-muted/10 p-4"><dl className="grid gap-3 text-[12px] sm:grid-cols-2"><Detail label="Method" value={result.request.method} /><Detail label="Authentication" value="Applied only server-side" /><Detail label="Endpoint" value={result.request.endpoint} mono /><Detail label="Parameters" value={Object.entries(result.parameters ?? {}).map(([key, value]) => `${key} = ${value}`).join(" · ") || "None"} mono /></dl></div>}</div>}
+  {!apiDocs && result.request && <div className="mt-5 overflow-hidden rounded-2xl border"><button type="button" onClick={() => setDetailsOpen(!detailsOpen)} className="flex w-full items-center justify-between px-4 py-3 text-left text-[13px] font-medium"><span className="flex items-center gap-2"><Code2 className="size-3.5 text-accent" /> Request verification</span><ChevronDown className={cn("size-4 transition-transform", detailsOpen && "rotate-180")} /></button>{detailsOpen && <div className="border-t bg-muted/10 p-4"><dl className="grid gap-3 text-[12px] sm:grid-cols-2"><Detail label="Method" value={result.request.method} /><Detail label="Authentication" value="Applied only server-side" /><Detail label="Endpoint" value={result.request.endpoint} mono /><Detail label="Parameters" value={Object.entries(result.parameters ?? {}).map(([key, value]) => `${key} = ${value}`).join(" · ") || "None"} mono /></dl></div>}</div>}
   </>;
 }
 

@@ -24,6 +24,7 @@ export interface CatalogOperation {
   required: string[];
   optional: string[];
   availability_note: string;
+  product?: { id?: string; path?: string; portal?: string };
 }
 
 export const CATALOG_META = {
