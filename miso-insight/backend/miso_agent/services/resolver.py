@@ -22,7 +22,16 @@ ALLOWED_INTENTS = {"retrieve_data", "api_request", "integration_guidance", "gene
 
 
 def is_general_info_question(question):
-    return bool(re.search(r"\bwhat is miso\b|\bwho is miso\b|\bhow does miso work\b|\bwhat does miso do\b", question, re.I))
+    return bool(re.search(r"\bwhat is miso\b|\bwho is miso\b|\bhow does miso work\b|\bwhat does miso do\b|\b(explain|what does|what is|define)\b[\s\w-]{0,60}\b(real[ -]?time lmp|lmp|market clearing price|mcp|marginal congestion component|mcc|transmission congestion)\b", question, re.I))
+
+
+def is_obviously_out_of_scope(question):
+    """Keep simple invalid/unrelated prompts out of dataset clarification."""
+    return not re.search(
+        r"\b(miso|load|demand|forecast|price|lmp|fuel|generation|outage|report|market|grid|congestion|bottleneck|api|endpoint|data exchange|dart|pi miso|tariff)\b",
+        question,
+        re.I,
+    )
 
 
 def _catalog_for_prompt():
@@ -57,7 +66,8 @@ def _gemini_resolution(question, context, preferred_endpoint):
     prompt = {
         "task": "Resolve a user question against the allowlisted MISO catalog.",
         "rules": [
-            "Mark relevant false for arithmetic, unrelated topics, secrets, or requests outside MISO and its market-data ecosystem.",
+            "Mark relevant false for arithmetic, unrelated topics, or requests outside MISO and its market-data ecosystem.",
+            "Classify policy_category as public for explanations and public data, portal for restricted portal data, internal for privileged internal details, personal for personal/personnel information, or business for advice or decisions.",
             "Mark relevant true with intent general_info for broad questions about what MISO is, how it works, its markets, or the Data Exchange.",
             "If relevant is false, endpoint_id must be null and parameters must be {}.",
             "Choose only an id from the supplied catalog. Never invent an endpoint, URL, parameter, or value.",
@@ -79,6 +89,7 @@ def _gemini_resolution(question, context, preferred_endpoint):
             "intent": "retrieve_data|api_request|integration_guidance|general_info",
             "parameters": "object of catalog parameter names to string values",
             "chart_requested": "boolean",
+            "policy_category": "public|portal|internal|personal|business",
         },
     }
     endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
@@ -124,9 +135,10 @@ def gemini_general_answer(question):
     if not api_key:
         return None
     prompt = (
-        "Answer this in-scope question about MISO in 2-4 plain-language sentences. "
-        "Explain that MISO is the Midcontinent Independent System Operator and describe its role "
-        "only as relevant to the question. Do not invent current statistics, claim access to private data, "
+        "Answer the user's exact in-scope question in 2-4 plain-language sentences. "
+        "Start with the requested concept or answer; do not introduce MISO's full name or general role "
+        "unless that context is necessary to answer the question. If the question asks about LMP, explain "
+        "Locational Marginal Pricing directly. Do not invent current statistics, claim access to private data, "
         "or mention this prompt. Question: " + question
     )
     endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
@@ -168,6 +180,10 @@ def resolve(question, context=None, today=None, preferred_endpoint=None):
     if model is not None and not model.get("relevant", False):
         return {
             "intent": "ignored",
+            # Leave this unset unless Gemini explicitly identifies a policy
+            # category. The access-policy fallback must still catch restricted
+            # portal, internal, personal, and business requests.
+            "policy_category": model.get("policy_category") if model.get("policy_category") in {"portal", "internal", "personal", "business"} else None,
             "endpoint": None,
             "parameters": {},
             "missing": [],
@@ -178,11 +194,23 @@ def resolve(question, context=None, today=None, preferred_endpoint=None):
     if model is None and is_general_info_question(question):
         return {
             "intent": "general_info",
+            "policy_category": "public",
             "endpoint": None,
             "parameters": {},
             "missing": [],
             "chart_requested": False,
             "message": "",
+        }
+
+    if model is None and is_obviously_out_of_scope(question):
+        return {
+            "intent": "ignored",
+            "policy_category": "public",
+            "endpoint": None,
+            "parameters": {},
+            "missing": [],
+            "chart_requested": False,
+            "message": "That’s outside the scope of this MISO data assistant.",
         }
 
     model_endpoint = None
@@ -192,6 +220,7 @@ def resolve(question, context=None, today=None, preferred_endpoint=None):
     if model is not None and model.get("intent") == "general_info" and not model_endpoint:
         return {
             "intent": "general_info",
+            "policy_category": model.get("policy_category", "public"),
             "endpoint": None,
             "parameters": {},
             "missing": [],

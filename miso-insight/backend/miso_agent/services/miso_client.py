@@ -101,6 +101,44 @@ def normalize_public_fuel_mix(payload, parameters):
     }
 
 
+def normalize_public_lmp(payload, parameters):
+    """Map MISO's current five-minute public LMP table into agent rows."""
+    headers = (payload or {}).get("headers") or []
+    values = (payload or {}).get("data") or []
+    positions = {str(name).upper(): index for index, name in enumerate(headers)}
+    rows = []
+    requested_node = parameters.get("node", "").upper()
+    for item in values:
+        if not isinstance(item, list):
+            continue
+        node = str(item[positions["CPNODE"]]) if "CPNODE" in positions and positions["CPNODE"] < len(item) else ""
+        if requested_node and node.upper() != requested_node:
+            continue
+        raw_lmp = item[positions["LMP"]] if "LMP" in positions and positions["LMP"] < len(item) else None
+        try:
+            value = float(raw_lmp)
+        except (TypeError, ValueError):
+            continue
+        interval = str(item[positions["INTERVAL"]]) if "INTERVAL" in positions and positions["INTERVAL"] < len(item) else ""
+        rows.append({
+            "marketDate": interval[:10],
+            "interval": interval,
+            "node": node,
+            "value": value,
+            "lmp": value,
+            "marginalLoss": item[positions["MLC"]] if "MLC" in positions and positions["MLC"] < len(item) else None,
+            "marginalCongestion": item[positions["MCC"]] if "MCC" in positions and positions["MCC"] < len(item) else None,
+        })
+    return {
+        "data": rows,
+        "page": {"lastPage": True, "totalPages": 1},
+        "simulated": False,
+        "source": "MISO Public API",
+        "headers": headers,
+        "recordCount": len(rows),
+    }
+
+
 def _http_get_json(url, headers, timeout):
     outgoing = Request(url, method="GET", headers=headers)
     try:
@@ -133,6 +171,8 @@ def execute_public(endpoint, parameters, request_spec=None):
     )
     if endpoint["id"] == "realtime_generation_fuel_type":
         return status, normalize_public_fuel_mix(payload, parameters), False
+    if endpoint["id"] == "realtime_lmp":
+        return status, normalize_public_lmp(payload, parameters), False
     return status, {"data": [], "raw": payload, "simulated": False, "source": "MISO Public API"}, False
 
 

@@ -2,7 +2,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.utils.crypto import constant_time_compare
-from django.http import HttpResponse
+from django.http import FileResponse, HttpResponse
 import os
 from io import BytesIO
 from pathlib import Path
@@ -15,12 +15,23 @@ from .services.errors import diagnose
 from .services.miso_client import has_subscription_key
 from .services.request_builder import build, validate
 from .services.resolver import resolve
+from .services.tariff_grounding import TARIFF_PATH
 from .services.handoff import poll, queue_handoff, update_handoff, verify
 
 
 class LocalAPIView(APIView):
     authentication_classes = []
     permission_classes = []
+
+
+class TariffPdfView(LocalAPIView):
+    def get(self, request):
+        pdf = Path(TARIFF_PATH)
+        if not pdf.is_file():
+            return Response({"detail": "The local tariff PDF is not available."}, status=status.HTTP_404_NOT_FOUND)
+        response = FileResponse(pdf.open("rb"), content_type="application/pdf")
+        response["Content-Disposition"] = "inline; filename=TariffAsFiledVersion.pdf"
+        return response
 
 
 class HealthView(LocalAPIView):

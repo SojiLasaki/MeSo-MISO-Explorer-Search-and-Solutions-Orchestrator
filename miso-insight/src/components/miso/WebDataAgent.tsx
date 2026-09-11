@@ -6,14 +6,15 @@ import {
   ArrowUp,
   ArrowUpRight,
   Bot,
+  Check,
   CheckCircle2,
   ChevronDown,
   CircleAlert,
   Code2,
+  Clipboard,
   Database,
   Download,
   FileText,
-  Globe2,
   History,
   KeyRound,
   Loader2,
@@ -80,6 +81,27 @@ interface SavedSessionMessage {
   payload: Record<string, unknown>;
 }
 
+type ChatTurn = { role: "user" | "agent"; text: string; result?: AgentResult };
+
+function buildConversationSummary(history: ChatTurn[]) {
+  if (!history.length) return "No conversation yet.";
+  const lines = ["MISO AI conversation summary", "", "Conversation:"];
+  history.forEach((turn) => {
+    lines.push(`${turn.role === "user" ? "User" : "MeSo"}: ${turn.text}`);
+    if (turn.role === "agent" && turn.result) {
+      const result = turn.result;
+      if (result.endpoint?.name) lines.push(`Data operation: ${result.endpoint.name}`);
+      if (result.verification?.source) lines.push(`Source: ${result.verification.source}`);
+      if (typeof result.verification?.status_code === "number") lines.push(`HTTP status: ${result.verification.status_code}`);
+      if (result.simulated) lines.push("Data status: simulated; no MISO request was sent.");
+      if (result.access_request) lines.push(`Access request: draft for ${result.access_request.recipient}; ${result.access_request.timeline}`);
+    }
+    lines.push("");
+  });
+  lines.push("Use this summary as context for a downstream assistant. Do not treat it as authorization to access restricted or personal information.");
+  return lines.join("\n");
+}
+
 export function WebDataAgent({ powerTrader = false, initialReport, initialApi }: { powerTrader?: boolean; initialReport?: ReportChatContext; initialApi?: CatalogOperation }) {
   // `undefined` means the initial connection probe is still in flight. Keep
   // that separate from `null`, which is a real unavailable state.
@@ -89,11 +111,13 @@ export function WebDataAgent({ powerTrader = false, initialReport, initialApi }:
   const [message, setMessage] = useState("");
   const [sessionId, setSessionId] = useState<string | undefined>();
   const [result, setResult] = useState<AgentResult | null>(null);
-  const [history, setHistory] = useState<Array<{ role: "user" | "agent"; text: string }>>([]);
+  const [history, setHistory] = useState<ChatTurn[]>([]);
   const [running, setRunning] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [errorOpen, setErrorOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [summaryOpen, setSummaryOpen] = useState(false);
+  const [summaryCopied, setSummaryCopied] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [savedSessions, setSavedSessions] = useState<SavedSession[]>([]);
   const submittedContext = useRef<string | null>(null);
@@ -141,7 +165,7 @@ export function WebDataAgent({ powerTrader = false, initialReport, initialApi }:
     try {
       const next = await localApi<{ session: { session_id: string }; messages: SavedSessionMessage[] }>(`/agent/sessions/${savedSessionId}/`);
       setSessionId(next.session.session_id);
-      setHistory(next.messages.map((item) => ({ role: item.role === "assistant" ? "agent" : "user", text: item.content })));
+      setHistory(next.messages.map((item) => ({ role: item.role === "assistant" ? "agent" : "user", text: item.content, result: item.role === "assistant" && typeof item.payload?.["status"] === "string" ? item.payload as AgentResult : undefined })));
       const lastResult = [...next.messages].reverse().find((item) => item.role === "assistant" && typeof item.payload?.["status"] === "string");
       setResult(lastResult ? lastResult.payload as AgentResult : null);
       setHistoryOpen(false);
@@ -191,16 +215,25 @@ export function WebDataAgent({ powerTrader = false, initialReport, initialApi }:
       });
       setResult(next);
       setSessionId(next.session_id ?? sessionId);
-      setHistory((items) => [...items, { role: "agent", text: next.message }]);
+      setHistory((items) => [...items, { role: "agent", text: next.message, result: next }]);
       if (next.status === "error") setErrorOpen(true);
       void refreshSavedSessions();
     } catch (error) {
       const text = error instanceof Error ? error.message : "Could not reach the Django backend.";
-      setResult({ status: "error", message: text, events: [], error: { status_code: 503, category: "local_connection", what_happened: text, suggested_fix: "Start Django on port 8000, then refresh this page.", can_retry: true, safe_request_context: {} } });
+      const next = { status: "error" as const, message: text, events: [], error: { status_code: 503, category: "local_connection", what_happened: text, suggested_fix: "Start Django on port 8000, then refresh this page.", can_retry: true, safe_request_context: {} } };
+      setResult(next);
+      setHistory((items) => [...items, { role: "agent", text, result: next }]);
       setErrorOpen(true);
     } finally {
       setRunning(false);
     }
+  };
+
+  const conversationSummary = buildConversationSummary(history);
+  const copySummary = async () => {
+    await navigator.clipboard.writeText(conversationSummary);
+    setSummaryCopied(true);
+    window.setTimeout(() => setSummaryCopied(false), 1800);
   };
 
   const run505 = async () => {
@@ -233,6 +266,15 @@ export function WebDataAgent({ powerTrader = false, initialReport, initialApi }:
           <ModeToggle mode={mode} setMode={setMode} availableMode={connection?.miso_mode === "live" || connection?.miso_mode === "public" ? connection.miso_mode : null} />
         </div>
       </header>
+
+      <button type="button" aria-expanded={summaryOpen} onClick={() => setSummaryOpen((open) => !open)} className="fixed right-0 top-1/2 z-30 flex -translate-y-1/2 items-center gap-2 rounded-l-xl border border-r-0 bg-card px-2 py-3 text-[11px] font-medium shadow-lift [writing-mode:vertical-rl] hover:bg-accent-soft">
+        <Clipboard className="size-3.5" />Agent summary
+      </button>
+      {summaryOpen && <aside role="dialog" aria-label="Agent summary" className="fixed inset-y-0 right-0 z-40 flex w-[min(92vw,30rem)] max-w-[30rem] flex-col border-l bg-background shadow-2xl">
+        <div className="flex items-center justify-between border-b px-5 py-4"><div><p className="text-[15px] font-medium">Agent summary</p><p className="mt-0.5 text-[11.5px] text-muted-foreground">Copy this context into another assistant.</p></div><button type="button" onClick={() => setSummaryOpen(false)} className="rounded-lg px-2 py-1 text-[12px] text-muted-foreground hover:bg-muted">Close</button></div>
+        <div className="min-h-0 flex-1 overflow-y-auto p-5"><textarea readOnly value={conversationSummary} className="min-h-[28rem] w-full resize-none rounded-xl border bg-muted/15 p-3 text-[12px] leading-relaxed outline-none" /></div>
+        <div className="border-t p-4"><button type="button" onClick={() => void copySummary()} className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2.5 text-[12px] font-medium text-primary-foreground hover:opacity-90">{summaryCopied ? <Check className="size-3.5" /> : <Clipboard className="size-3.5" />}{summaryCopied ? "Copied" : "Copy summary"}</button></div>
+      </aside>}
 
       {historyOpen && <div className="fixed inset-0 z-40 flex justify-end" role="dialog" aria-modal="true" aria-label="Chat history">
         <button type="button" aria-label="Close chat history" onClick={() => setHistoryOpen(false)} className="absolute inset-0 bg-foreground/15 backdrop-blur-[1px]" />
@@ -273,13 +315,15 @@ export function WebDataAgent({ powerTrader = false, initialReport, initialApi }:
           {history.length > 0 && <div className="mx-auto max-w-4xl space-y-4 pt-4">
             {history.map((turn, index) => (
               <div key={index} className={cn("max-w-[88%] rounded-2xl px-4 py-3 text-[13px] leading-relaxed", turn.role === "user" ? "ml-auto bg-primary text-primary-foreground" : "border bg-card/90 text-foreground shadow-soft")}>
-                <p className="mb-1 text-[10px] font-medium uppercase tracking-[0.1em] opacity-65">{turn.role === "user" ? "You" : "MeSo"}</p>{turn.text}
+                <p className="mb-1 text-[10px] font-medium uppercase tracking-[0.1em] opacity-65">{turn.role === "user" ? "You" : "MeSo"}</p>
+                <p>{turn.text}</p>
+                {turn.result && <div className="mt-4 border-t border-border/60 pt-4"><ResultPanel result={turn.result} detailsOpen={detailsOpen} setDetailsOpen={setDetailsOpen} onQuickReply={(text) => void send(text)} />{turn.result.handoff && <LocalAgentHandoff handoff={turn.result.handoff} />}<div className="mt-4"><AgentTimeline events={turn.result.events ?? []} statusLabel={agentStatusLabel(turn.result)} /></div></div>}
               </div>
             ))}
             {running && <div className="flex items-center gap-2 text-[12.5px] text-muted-foreground"><Loader2 className="size-4 animate-spin text-accent" /> Agent is resolving parameters and preparing a request…</div>}
           </div>}
 
-          {result && <section className="mx-auto mt-5 grid max-w-6xl gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(300px,0.8fr)]"><div className="rounded-3xl border bg-card p-5 shadow-soft sm:p-6"><ResultPanel result={result} detailsOpen={detailsOpen} setDetailsOpen={setDetailsOpen} onQuickReply={(text) => void send(text)} />{result.delivery && <DeliveryRoute delivery={result.delivery} />}{result.handoff && <LocalAgentHandoff handoff={result.handoff} />}</div><AgentTimeline events={result.events} /></section>}
+          {result && history.length === 0 && <section className="mx-auto mt-5 grid max-w-6xl gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(300px,0.8fr)]"><div className="rounded-3xl border bg-card p-5 shadow-soft sm:p-6"><ResultPanel result={result} detailsOpen={detailsOpen} setDetailsOpen={setDetailsOpen} onQuickReply={(text) => void send(text)} /></div><AgentTimeline events={result.events ?? []} statusLabel={agentStatusLabel(result)} /></section>}
 
           {result?.error && <section className="mx-auto mt-5 max-w-6xl rounded-3xl border border-destructive/25 bg-card p-5 shadow-soft sm:p-6"><button type="button" onClick={() => setErrorOpen((open) => !open)} className="flex w-full items-center justify-between text-left"><span className="flex items-center gap-2 text-[15px] font-medium"><CircleAlert className="size-4 text-destructive" /> Error Center — HTTP {result.error.status_code}</span><ChevronDown className={cn("size-4 transition-transform", errorOpen && "rotate-180")} /></button>{errorOpen && <ErrorDiagnosis error={result.error} request={result.request} />}</section>}
         </div>
@@ -287,7 +331,7 @@ export function WebDataAgent({ powerTrader = false, initialReport, initialApi }:
 
       <form onSubmit={(event) => { event.preventDefault(); void send(); }} className="fixed inset-x-0 bottom-0 z-20 border-t bg-background/85 px-5 pb-6 pt-3 backdrop-blur-xl sm:px-8 sm:pb-7">
         <div className="mx-auto flex w-full max-w-3xl items-end gap-2 rounded-2xl border bg-card p-2 shadow-lift">
-          <textarea ref={messageInput} value={message} onChange={(event) => { setMessage(event.target.value); event.currentTarget.style.height = "auto"; event.currentTarget.style.height = `${Math.min(event.currentTarget.scrollHeight, 144)}px`; }} rows={1} placeholder="Ask about MISO data, a report, an endpoint, or a technical integration…" className="h-9 min-h-9 flex-1 resize-none overflow-y-auto border-0 bg-transparent px-2 py-2 text-[13px] outline-none placeholder:text-muted-foreground" />
+          <textarea ref={messageInput} value={message} onChange={(event) => { setMessage(event.target.value); event.currentTarget.style.height = "auto"; event.currentTarget.style.height = `${Math.min(event.currentTarget.scrollHeight, 144)}px`; }} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void send(); } }} rows={1} placeholder="Ask about MISO data, a report, an endpoint, or a technical integration…" className="h-9 min-h-9 flex-1 resize-none overflow-y-auto border-0 bg-transparent px-2 py-2 text-[13px] outline-none placeholder:text-muted-foreground" />
           <Button type="submit" size="icon" className="shrink-0 rounded-xl" disabled={running || !message.trim()} aria-label="Send question"><ArrowUp className="size-4" /></Button>
         </div>
       </form>
@@ -339,9 +383,10 @@ function ErrorCenter({ onRun505, running }: { onRun505: () => void; running: boo
 
 function ResultPanel({ result, detailsOpen, setDetailsOpen, onQuickReply }: { result: AgentResult; detailsOpen: boolean; setDetailsOpen: (open: boolean) => void; onQuickReply: (text: string) => void }) {
   const rows = result.data?.data?.slice(0, 6) ?? [];
-  const label = result.status === "needs_input" ? "DETAIL NEEDED" : result.status === "validation_error" ? "PARAMETER NEEDS ATTENTION" : result.simulated ? "SIMULATED RESPONSE" : result.status === "error" ? "REQUEST FAILED" : result.api_only ? "API REQUEST READY" : result.integration_guidance ? "INTEGRATION TEMPLATE" : result.report ? "OFFICIAL REPORT" : "REQUEST VERIFIED";
   const handoffHref = ptdHandoffHref(result);
-  return <><div className="flex flex-wrap items-start justify-between gap-3"><div><div className={cn("inline-flex rounded-full px-2.5 py-1 text-[10.5px] font-medium", result.simulated ? "bg-accent-soft text-accent" : result.status === "error" ? "bg-destructive-soft text-destructive" : result.api_only || result.integration_guidance ? "bg-accent-soft text-accent" : "bg-success-soft text-success")}>{label}</div><h2 className="mt-3 text-[20px] font-medium">{result.endpoint?.name ?? result.report?.title ?? "Agent response"}</h2><p className="mt-1 text-[13px] text-muted-foreground">{result.message}</p></div>{typeof result.verification?.status_code === "number" && <span className="flex items-center gap-1.5 text-[11.5px] text-success"><CheckCircle2 className="size-3.5" />HTTP {result.verification.status_code}</span>}</div>
+  return <><div className="flex flex-wrap items-start justify-between gap-3"><div>{(result.endpoint?.name || result.report?.title) && <h2 className="text-[20px] font-medium">{result.endpoint?.name ?? result.report?.title}</h2>}</div>{typeof result.verification?.status_code === "number" && <span className="flex items-center gap-1.5 text-[11.5px] text-success"><CheckCircle2 className="size-3.5" />HTTP {result.verification.status_code}</span>}</div>
+  {result.sources && result.sources.length > 0 && <div className="mt-4 rounded-2xl border bg-muted/10 p-3"><p className="text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground">Sources</p><div className="mt-2 flex flex-wrap gap-2">{result.sources.map((source, index) => { const label = source.page ? `${source.title} · PDF p. ${source.page}` : source.title; return <div key={`${source.title}-${index}`} className="flex flex-col gap-2">{source.url ? <a href={source.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-lg border bg-card px-2.5 py-1.5 text-[11.5px] font-medium text-accent hover:border-accent">{label}<ArrowUpRight className="size-3" /></a> : <span title={source.document} className="inline-flex items-center gap-1 rounded-lg border bg-card px-2.5 py-1.5 text-[11.5px] font-medium text-foreground">{label}</span>}{source.request_json && <details className="rounded-lg border bg-card px-2.5 py-1.5 text-[10.5px]"><summary className="cursor-pointer font-medium text-muted-foreground">View JSON request</summary><pre className="mt-2 max-w-full overflow-auto whitespace-pre-wrap text-[10px] leading-relaxed">{JSON.stringify(source.request_json, null, 2)}</pre></details>}</div>; })}</div></div>}
+  {result.access_request && <div className="mt-5 rounded-2xl border border-dashed bg-muted/30 p-4"><p className="text-[13px] font-medium">Access request email generated</p><p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">{result.access_request.timeline}</p><a className="mt-3 inline-flex rounded-lg border bg-card px-3 py-1.5 text-[12px] font-medium" href={`mailto:${result.access_request.recipient}?subject=${encodeURIComponent(result.access_request.subject)}&body=${encodeURIComponent(result.access_request.body)}`}>Open email draft</a></div>}
   {result.report && <div className="mt-5 rounded-2xl border bg-muted/20 p-4"><p className="text-[12px] leading-relaxed text-muted-foreground">{result.report.description}</p><a href={result.report.url} target="_blank" rel="noreferrer" className="mt-3 inline-flex text-[12px] font-medium text-accent hover:underline">Open official MISO report →</a></div>}
   {result.missing_parameters && <div className="mt-5 rounded-2xl border border-accent/20 bg-accent-soft/25 p-4"><p className="text-[13px] font-medium">One detail is needed before I can continue.</p><div className="mt-3 flex flex-wrap gap-2">{result.missing_parameters.map((item) => <button key={item.name} type="button" onClick={() => onQuickReply("yesterday")} className="rounded-full border bg-card px-3 py-1.5 text-[12px] hover:border-accent">Use yesterday</button>)}</div><p className="mt-3 text-[12px] text-muted-foreground">{result.message}</p></div>}
   {result.summary && <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">{Object.entries(result.summary).map(([label, value]) => <div key={label} className="rounded-xl border bg-muted/20 p-3"><p className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</p><p className="mt-1 text-[16px] font-medium">{typeof value === "number" ? value.toLocaleString() : value}</p></div>)}</div>}
@@ -364,11 +409,6 @@ function MiniChart({ rows }: { rows: Array<Record<string, string | number>> }) {
     return `${x},${y}`;
   }).join(" ");
   return <div className="mt-5 rounded-2xl border bg-muted/10 p-4"><div className="flex items-center justify-between"><p className="text-[12px] font-medium">Requested chart</p><p className="text-[10.5px] text-muted-foreground">Development data when labelled simulated</p></div><svg viewBox="0 0 100 100" preserveAspectRatio="none" className="mt-3 h-36 w-full overflow-visible"><path d="M0,92 H100" stroke="currentColor" className="text-border" strokeWidth="0.7" fill="none" /><polyline points={points} vectorEffect="non-scaling-stroke" fill="none" stroke="currentColor" className="text-accent" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" /></svg><div className="flex justify-between text-[10.5px] text-muted-foreground"><span>{min.toLocaleString()}</span><span>{max.toLocaleString()}</span></div></div>;
-}
-
-function DeliveryRoute({ delivery }: { delivery: NonNullable<AgentResult["delivery"]> }) {
-  const local = delivery.requires_local_agent;
-  return <section className={cn("mt-5 rounded-2xl border p-4", local ? "border-accent/25 bg-accent-soft/20" : "border-success/25 bg-success-soft/20")}><p className="flex items-center gap-2 text-[13px] font-medium">{local ? <Database className="size-4 text-accent" /> : <Globe2 className="size-4 text-success" />}{local ? "Local Integration Agent required" : "Handled online"}</p><p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">{delivery.reason}</p>{local && <a href={localAgentDownloadUrl()} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border bg-card px-2.5 py-1.5 text-[11.5px] font-medium text-accent hover:border-accent" download><Download className="size-3.5" />Download Local Agent</a>}</section>;
 }
 
 function LocalAgentHandoff({ handoff }: { handoff: NonNullable<AgentResult["handoff"]> }) {
@@ -396,6 +436,13 @@ function LocalAgentHandoff({ handoff }: { handoff: NonNullable<AgentResult["hand
   return <section className={cn("mt-5 rounded-2xl border p-4", complete ? "border-success/25 bg-success-soft/25" : "border-accent/25 bg-accent-soft/20")}><p className="flex items-center gap-2 text-[13px] font-medium"><Database className={cn("size-4", complete ? "text-success" : "text-accent")} /> Local Integration Agent</p><p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">{complete ? generatedDirectory ? "The local agent verified the signed instruction and created a reviewable integration package. It did not receive a subscription key." : "The local agent verified the signed instruction and wrote a reviewable integration manifest. It did not receive a subscription key." : "The web agent has queued a signed, secret-free instruction. Run python local_agent/agent.py --once --apply to create the local integration package."}</p><a href={localAgentDownloadUrl()} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border bg-card px-2.5 py-1.5 text-[11.5px] font-medium text-accent hover:border-accent" download><Download className="size-3.5" />Download Local Agent</a><div className="mt-3 flex items-center justify-between rounded-xl border bg-card/60 px-3 py-2 text-[11.5px]"><span className="font-medium capitalize">{status}</span><code className="text-muted-foreground">handoff {handoff.id.slice(0, 8)}</code></div>{generatedDirectory && <p className="mt-2 break-all text-[11px] text-muted-foreground">Integration package: {String(generatedDirectory)}</p>}{receipt?.["manifest_path"] && <p className="mt-2 break-all text-[11px] text-muted-foreground">Manifest: {String(receipt["manifest_path"])}</p>}</section>;
 }
 
-function AgentTimeline({ events }: { events: AgentResult["events"] }) { return <section className="rounded-3xl border bg-card p-5 shadow-soft sm:p-6"><p className="flex items-center gap-2 text-[14px] font-medium"><Activity className="size-4 text-accent" /> Agent execution</p><ol className="mt-5 space-y-4">{events.map((event, index) => <li key={index} className="flex gap-3"><span className={cn("mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full", event.status === "error" ? "bg-destructive-soft text-destructive" : event.status === "warning" ? "bg-accent-soft text-accent" : "bg-success-soft text-success")}>{event.status === "error" ? <XCircle className="size-3.5" /> : event.status === "warning" ? <CircleAlert className="size-3.5" /> : <CheckCircle2 className="size-3.5" />}</span><div><p className="text-[12.5px] font-medium capitalize">{event.stage}</p><p className="mt-0.5 text-[12px] leading-relaxed text-muted-foreground">{event.message}</p></div></li>)}</ol></section>; }
+function agentStatusLabel(result: AgentResult) {
+  return result.status === "ignored" ? "IGNORED" : result.status === "needs_input" ? "DETAIL NEEDED" : result.status === "validation_error" ? "PARAMETER NEEDS ATTENTION" : result.simulated ? "SIMULATED RESPONSE" : result.status === "error" ? "REQUEST FAILED" : result.api_only ? "API REQUEST READY" : result.integration_guidance ? "INTEGRATION TEMPLATE" : result.report ? "OFFICIAL REPORT" : "REQUEST VERIFIED";
+}
+
+function AgentTimeline({ events, statusLabel }: { events: AgentResult["events"]; statusLabel?: string }) {
+  const [open, setOpen] = useState(false);
+  return <section className="rounded-2xl border bg-muted/10"><button type="button" onClick={() => setOpen((value) => !value)} className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"><span className="flex items-center gap-2 text-[13px] font-medium"><Activity className="size-4 text-accent" /> Agent execution</span><ChevronDown className={cn("size-4 transition-transform", open && "rotate-180")} /></button>{open && <div className="border-t px-4 py-4">{statusLabel && <p className="mb-4 text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground">Status · {statusLabel}</p>}<ol className="space-y-4">{events.map((event, index) => <li key={index} className="flex gap-3"><span className={cn("mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full", event.status === "error" ? "bg-destructive-soft text-destructive" : event.status === "warning" ? "bg-accent-soft text-accent" : "bg-success-soft text-success")}>{event.status === "error" ? <XCircle className="size-3.5" /> : event.status === "warning" ? <CircleAlert className="size-3.5" /> : <CheckCircle2 className="size-3.5" />}</span><div><p className="text-[12.5px] font-medium capitalize">{event.stage}</p><p className="mt-0.5 text-[12px] leading-relaxed text-muted-foreground">{event.message}</p></div></li>)}</ol></div>}</section>;
+}
 
 function ErrorDiagnosis({ error, request }: { error: NonNullable<AgentResult["error"]>; request?: AgentResult["request"] }) { return <div className="mt-5 grid gap-4 border-t pt-5 sm:grid-cols-2"><div className="rounded-2xl border bg-destructive-soft/25 p-4"><p className="text-[10.5px] font-medium uppercase tracking-wide text-destructive">What happened</p><p className="mt-2 text-[13px] leading-relaxed">{error.what_happened}</p><p className="mt-3 text-[11.5px] text-muted-foreground">Classification: {error.category.replace("_", " ")}</p></div><div className="rounded-2xl border bg-muted/20 p-4"><p className="text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground">Agent recommendation</p><p className="mt-2 text-[13px] leading-relaxed">{error.suggested_fix}</p><p className="mt-3 text-[11.5px] text-muted-foreground">{error.can_retry ? "Retry is permitted after this check." : "A retry is not recommended until configuration is corrected."}</p></div>{request && <div className="sm:col-span-2 rounded-2xl border bg-muted/10 p-4"><p className="text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground">Safe request context</p><code className="mt-2 block break-all text-[11px]">{request.method} {request.url}</code><p className="mt-2 text-[11px] text-muted-foreground">No subscription key or authorization value was recorded.</p></div>}</div>; }

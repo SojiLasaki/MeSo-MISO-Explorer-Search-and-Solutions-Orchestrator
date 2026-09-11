@@ -31,8 +31,9 @@ export interface AgentEvent {
 
 export interface AgentResult {
   session_id?: string;
-  status: "success" | "needs_input" | "validation_error" | "error";
+  status: "success" | "needs_input" | "validation_error" | "error" | "ignored";
   message: string;
+  sources?: Array<{ title: string; url?: string; page?: number; document?: string; request_json?: { method: string; url: string; params: Record<string, string> } }>;
   endpoint?: { id: string; name: string; unit: string; parameters: Array<{ name: string; label: string; required: boolean; options: string[] }> };
   parameters?: Record<string, string>;
   missing_parameters?: Array<{ name: string; label: string; question: string }>;
@@ -47,6 +48,7 @@ export interface AgentResult {
   delivery?: { target: "web_data_agent" | "local_integration_agent"; reason: string; requires_local_agent: boolean };
   report?: { title: string; url: string; description: string; api_replacement?: string | null };
   handoff?: { id: string; status: "queued" | "received" | "completed" | "failed"; agent_id: string; instruction: string };
+  access_request?: { status: "draft" | "sent"; recipient: string; subject: string; body: string; timeline: string };
   verification?: { tested: boolean; status_code: number | null; source: string; authentication: string };
   error?: { status_code: number; category: string; what_happened: string; suggested_fix: string; can_retry: boolean; safe_request_context: { method?: string; url?: string } };
 }

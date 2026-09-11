@@ -1,6 +1,6 @@
 import type { AccessRequest, AccessPolicyCategory, AccessPolicyDecision } from "./types";
 
-const REAL_TIME_RESTRICTED = /\b(real[ -]?time|rt)\b[\s\w-]{0,60}\b(price|pricing|lmp|congestion|bottleneck|grid|information)\b|\b(price|pricing|lmp|congestion|bottleneck)\b[\s\w-]{0,60}\b(real[ -]?time|grid)\b/i;
+const REAL_TIME_RESTRICTED = /\b(real[ -]?time|rt)\b[\s\w-]{0,60}\b(congestion|bottleneck|grid|information)\b|\b(congestion|bottleneck)\b[\s\w-]{0,60}\b(real[ -]?time|grid)\b/i;
 const CLEARING_RESTRICTED = /\b(clear(?:ing|ed)|generator clearing|clearing information)\b[\s\w-]{0,40}\b(generator|generation|unit|resource)?/i;
 const PORTAL_WORDS = /\b(dart|pi|portal|database)\b/i;
 const INTERNAL_PRIVATE = /\b(internal|private|privileged|confidential|nonpublic|non-public|restricted)\b[\s\w-]{0,60}\b(system|systems|architecture|connection|integration|workflow|process|information|data)?|\b(how|where)\b[\s\w-]{0,40}\b(internal|private)\b/i;
