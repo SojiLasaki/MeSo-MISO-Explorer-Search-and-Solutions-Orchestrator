@@ -1,0 +1,42 @@
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 11:52:30
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[Gemini resolver] requesting model gemini-3.6-flash
+[Gemini resolver] fallback: URLError
+[Gemini answer] requesting model gemini-3.6-flash
+[Gemini answer] fallback: URLError
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 11:52:59
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[Gemini resolver] requesting model gemini-3.6-flash
+[Gemini resolver] fallback: URLError
+[Gemini answer] requesting model gemini-3.6-flash
+[Gemini answer] fallback: URLError
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 11:53:19
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[Gemini resolver] requesting model gemini-3.6-flash
+[Gemini resolver] fallback: URLError: [WinError 10013] An attempt was made to access a socket in a way forbidden by its access permissions
+[Gemini answer] requesting model gemini-3.6-flash
+[Gemini answer] fallback: URLError: [WinError 10013] An attempt was made to access a socket in a way forbidden by its access permissions

@@ -177,6 +177,19 @@ var ArrowUp = createLucideIcon("arrow-up", [["path", {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var BookOpen = createLucideIcon("book-open", [["path", {
+	d: "M12 7v14",
+	key: "1akyts"
+}], ["path", {
+	d: "M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z",
+	key: "ruj8y"
+}]]);
+/**
+* @license lucide-react v0.575.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var Bot = createLucideIcon("bot", [
 	["path", {
 		d: "M12 8V4H8",
@@ -454,6 +467,24 @@ var Circle = createLucideIcon("circle", [["circle", {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var Clipboard = createLucideIcon("clipboard", [["rect", {
+	width: "8",
+	height: "4",
+	x: "8",
+	y: "2",
+	rx: "1",
+	ry: "1",
+	key: "tgr4d6"
+}], ["path", {
+	d: "M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2",
+	key: "116196"
+}]]);
+/**
+* @license lucide-react v0.575.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var Clock3 = createLucideIcon("clock-3", [["circle", {
 	cx: "12",
 	cy: "12",
@@ -542,32 +573,6 @@ var Download = createLucideIcon("download", [
 	["path", {
 		d: "m7 10 5 5 5-5",
 		key: "brsn70"
-	}]
-]);
-/**
-* @license lucide-react v0.575.0 - ISC
-*
-* This source code is licensed under the ISC license.
-* See the LICENSE file in the root directory of this source tree.
-*/
-var Earth = createLucideIcon("earth", [
-	["path", {
-		d: "M21.54 15H17a2 2 0 0 0-2 2v4.54",
-		key: "1djwo0"
-	}],
-	["path", {
-		d: "M7 3.34V5a3 3 0 0 0 3 3a2 2 0 0 1 2 2c0 1.1.9 2 2 2a2 2 0 0 0 2-2c0-1.1.9-2 2-2h3.17",
-		key: "1tzkfa"
-	}],
-	["path", {
-		d: "M11 21.95V18a2 2 0 0 0-2-2a2 2 0 0 1-2-2v-1a2 2 0 0 0-2-2H2.05",
-		key: "14pb5j"
-	}],
-	["circle", {
-		cx: "12",
-		cy: "12",
-		r: "10",
-		key: "1mglay"
 	}]
 ]);
 /**
@@ -1169,4 +1174,4 @@ var Zap = createLucideIcon("zap", [["path", {
 	key: "1xq2db"
 }]]);
 //#endregion
-export { ArrowUpRight as $, FileText as A, CircleDollarSign as B, LoaderCircle as C, KeyRound as D, Laptop as E, Copy as F, ChevronDown as G, CircleAlert as H, CodeXml as I, ChartColumn as J, Check as K, Clock3 as L, Earth as M, Download as N, History as O, Database as P, ArrowUp as Q, Circle as R, LockKeyhole as S, Layers as T, ChevronUp as U, CircleCheck as V, ChevronRight as W, Braces as X, CalendarDays as Y, Bot as Z, Play as _, Trash2 as a, LogOut as b, Sparkles as c, Settings2 as d, ArrowRight as et, Server as f, Plus as g, RefreshCw as h, User as i, ExternalLink as j, Globe as k, SlidersHorizontal as l, RotateCcw as m, X as n, Activity as nt, Table2 as o, Search as p, ChartLine as q, Wrench as r, SquareTerminal as s, Zap as t, ArrowLeft as tt, ShieldCheck as u, Minus as v, ListChecks as w, Lock as x, MessageCircle as y, CircleX as z };
+export { ArrowUp as $, FileText as A, CircleDollarSign as B, LoaderCircle as C, KeyRound as D, Laptop as E, CodeXml as F, ChevronDown as G, CircleAlert as H, Clock3 as I, ChartColumn as J, Check as K, Clipboard as L, Download as M, Database as N, History as O, Copy as P, BookOpen as Q, Circle as R, LockKeyhole as S, Layers as T, ChevronUp as U, CircleCheck as V, ChevronRight as W, Braces as X, CalendarDays as Y, Bot as Z, Play as _, Trash2 as a, LogOut as b, Sparkles as c, Settings2 as d, ArrowUpRight as et, Server as f, Plus as g, RefreshCw as h, User as i, ExternalLink as j, Globe as k, SlidersHorizontal as l, RotateCcw as m, X as n, ArrowLeft as nt, Table2 as o, Search as p, ChartLine as q, Wrench as r, Activity as rt, SquareTerminal as s, Zap as t, ArrowRight as tt, ShieldCheck as u, Minus as v, ListChecks as w, Lock as x, MessageCircle as y, CircleX as z };

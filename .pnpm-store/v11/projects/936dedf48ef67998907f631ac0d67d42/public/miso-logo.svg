@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="MISO">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1684c6"/>
+      <stop offset="1" stop-color="#46b5d8"/>
+    </linearGradient>
+    <linearGradient id="field" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#75bd3b"/>
+      <stop offset="1" stop-color="#1e7b4b"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#fff"/>
+  <circle cx="32" cy="27" r="19" fill="url(#sky)"/>
+  <path d="M14 39c8-8 15-9 22-5 7 4 11 3 14-1v10H14z" fill="url(#field)"/>
+  <path d="M14 45h36M19 39l6 6m20-6-6 6" fill="none" stroke="#fff" stroke-width="2" opacity=".9"/>
+  <circle cx="32" cy="23" r="5" fill="#ffd447"/>
+  <path d="M12 51h40" stroke="#1e7b4b" stroke-width="3" stroke-linecap="round"/>
+  <text x="32" y="59" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="700" fill="#111827">MISO</text>
+</svg>

@@ -4232,6 +4232,74 @@ var require_last = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	module.exports = last;
 }));
 //#endregion
+//#region node_modules/lodash/maxBy.js
+var require_maxBy = /* @__PURE__ */ __commonJSMin(((exports, module) => {
+	var baseExtremum = require__baseExtremum();
+	var baseGt = require__baseGt();
+	var baseIteratee = require__baseIteratee();
+	/**
+	* This method is like `_.max` except that it accepts `iteratee` which is
+	* invoked for each element in `array` to generate the criterion by which
+	* the value is ranked. The iteratee is invoked with one argument: (value).
+	*
+	* @static
+	* @memberOf _
+	* @since 4.0.0
+	* @category Math
+	* @param {Array} array The array to iterate over.
+	* @param {Function} [iteratee=_.identity] The iteratee invoked per element.
+	* @returns {*} Returns the maximum value.
+	* @example
+	*
+	* var objects = [{ 'n': 1 }, { 'n': 2 }];
+	*
+	* _.maxBy(objects, function(o) { return o.n; });
+	* // => { 'n': 2 }
+	*
+	* // The `_.property` iteratee shorthand.
+	* _.maxBy(objects, 'n');
+	* // => { 'n': 2 }
+	*/
+	function maxBy(array, iteratee) {
+		return array && array.length ? baseExtremum(array, baseIteratee(iteratee, 2), baseGt) : void 0;
+	}
+	module.exports = maxBy;
+}));
+//#endregion
+//#region node_modules/lodash/minBy.js
+var require_minBy = /* @__PURE__ */ __commonJSMin(((exports, module) => {
+	var baseExtremum = require__baseExtremum();
+	var baseIteratee = require__baseIteratee();
+	var baseLt = require__baseLt();
+	/**
+	* This method is like `_.min` except that it accepts `iteratee` which is
+	* invoked for each element in `array` to generate the criterion by which
+	* the value is ranked. The iteratee is invoked with one argument: (value).
+	*
+	* @static
+	* @memberOf _
+	* @since 4.0.0
+	* @category Math
+	* @param {Array} array The array to iterate over.
+	* @param {Function} [iteratee=_.identity] The iteratee invoked per element.
+	* @returns {*} Returns the minimum value.
+	* @example
+	*
+	* var objects = [{ 'n': 1 }, { 'n': 2 }];
+	*
+	* _.minBy(objects, function(o) { return o.n; });
+	* // => { 'n': 1 }
+	*
+	* // The `_.property` iteratee shorthand.
+	* _.minBy(objects, 'n');
+	* // => { 'n': 1 }
+	*/
+	function minBy(array, iteratee) {
+		return array && array.length ? baseExtremum(array, baseIteratee(iteratee, 2), baseLt) : void 0;
+	}
+	module.exports = minBy;
+}));
+//#endregion
 //#region node_modules/lodash/_getPrototype.js
 var require__getPrototype = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	module.exports = require__overArg()(Object.getPrototypeOf, Object);
@@ -4778,4 +4846,4 @@ var require_find = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	module.exports = require__createFind()(require_findIndex());
 }));
 //#endregion
-export { require_isFunction as C, require_memoize as S, require_isNaN as _, require_range as a, require_isNil as b, require_last as c, require_min as d, require_max as f, require_upperFirst as g, require_uniqBy as h, require_some as i, require_isEqual as l, require_sortBy as m, require_every as n, require_isBoolean as o, require_throttle as p, require_mapValues as r, require_isPlainObject as s, require_find as t, require_flatMap as u, require_isNumber as v, require_isObject as w, require_get as x, require_isString as y };
+export { require_get as C, require_isObject as E, require_isNil as S, require_isFunction as T, require_uniqBy as _, require_range as a, require_isNumber as b, require_minBy as c, require_isEqual as d, require_flatMap as f, require_sortBy as g, require_throttle as h, require_some as i, require_maxBy as l, require_max as m, require_every as n, require_isBoolean as o, require_min as p, require_mapValues as r, require_isPlainObject as s, require_find as t, require_last as u, require_upperFirst as v, require_memoize as w, require_isString as x, require_isNaN as y };

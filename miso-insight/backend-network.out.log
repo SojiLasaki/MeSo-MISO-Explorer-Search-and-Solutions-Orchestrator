@@ -1,0 +1,728 @@
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 11:56:37
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini answer] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 17:19:52
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 17:21:01
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 17:21:38
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini answer] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini answer] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini answer] requesting model gemini-3.5-flash-lite
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 17:38:10
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 17:38:13
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 17:38:15
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 17:38:41
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini answer] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini answer] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini answer] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini answer] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini answer] requesting model gemini-3.5-flash-lite
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 18:50:44
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 18:51:02
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 18:51:12
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini answer] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini answer] requesting model gemini-3.5-flash-lite
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 19:03:43
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 19:03:58
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini answer] requesting model gemini-3.5-flash-lite
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 19:09:49
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini answer] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini answer] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini answer] requesting model gemini-3.5-flash-lite
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 19:14:45
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 19:15:10
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 19:16:26
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 19:17:23
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 19:19:38
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 20:00:56
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 20:00:59
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 20:01:40
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 20:01:44
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 20:01:54
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 20:02:04
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini answer] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini answer] requesting model gemini-3.5-flash-lite
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 20:04:23
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini answer] requesting model gemini-3.5-flash-lite
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 20:05:13
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 20:05:15
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 20:05:19
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini answer] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 20:07:44
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 20:07:59
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 20:08:18
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 20:10:45
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini answer] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini answer] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 20:49:44
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 10, 2026 - 20:49:46
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 11, 2026 - 08:13:06
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 11, 2026 - 08:19:46
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 11, 2026 - 08:19:50
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 11, 2026 - 08:23:35
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] fallback: TimeoutError: request failed
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 11, 2026 - 08:27:04
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] fallback: TimeoutError: request failed
+[Gemini answer] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 11, 2026 - 08:34:52
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 11, 2026 - 08:40:08
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 11, 2026 - 08:40:18
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 11, 2026 - 08:40:21
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 11, 2026 - 08:40:38
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] fallback: TimeoutError: request failed
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini answer] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 11, 2026 - 08:45:30
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 11, 2026 - 08:45:32
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 11, 2026 - 08:46:51
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 11, 2026 - 08:47:14
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 11, 2026 - 08:48:13
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini answer] requesting model gemini-3.5-flash-lite
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 11, 2026 - 08:50:42
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 11, 2026 - 08:50:44
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 11, 2026 - 08:50:55
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini answer] requesting model gemini-3.5-flash-lite
+[Gemini answer] fallback: TimeoutError: request failed
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 11, 2026 - 08:53:08
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 11, 2026 - 08:53:10
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 11, 2026 - 08:55:46
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[Gemini answer] requesting model gemini-3.5-flash-lite
+[Gemini answer] requesting model gemini-3.5-flash-lite
+[Gemini answer] fallback: TimeoutError: request failed
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini answer] requesting model gemini-3.5-flash-lite
+[Gemini answer] requesting model gemini-3.5-flash-lite
+[Gemini answer] fallback: TimeoutError: request failed
+[Gemini answer] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] fallback: TimeoutError: request failed
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] fallback: TimeoutError: request failed
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] fallback: TimeoutError: request failed
+[Gemini answer] requesting model gemini-3.5-flash-lite
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] fallback: TimeoutError: request failed
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] fallback: TimeoutError: request failed
+[Gemini resolver] requesting model gemini-3.5-flash-lite
+[Gemini resolver] fallback: TimeoutError: request failed
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 11, 2026 - 09:05:17
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Performing system checks...
+
+System check identified no issues (0 silenced).
+September 11, 2026 - 09:05:19
+Django version 5.2.17, using settings 'miso_backend.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[Gemini answer] requesting model gemini-3.5-flash-lite
