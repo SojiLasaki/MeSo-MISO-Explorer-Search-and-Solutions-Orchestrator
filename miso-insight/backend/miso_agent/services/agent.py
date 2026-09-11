@@ -34,6 +34,13 @@ def _api_request_source(request_spec):
     }
 
 
+def _public_fallback(endpoint, parameters):
+    if not supports_public(endpoint):
+        return None
+    public_request = build(endpoint, parameters, prefer_public=True)
+    return {"method": public_request["method"], "url": public_request["url"], "params": public_request.get("params", {})}
+
+
 def _day_ahead_report_sources(question):
     """Return the guide and the date-specific XLS report for day-ahead pricing."""
     match = re.search(r"\b(20\d{2})[-/]?(\d{2})[-/]?(\d{2})\b", question)
@@ -199,6 +206,32 @@ def run_chat(question, session_id=None, mode=None, force_status=None, selected_s
         AgentMessage.objects.create(session=session, role="assistant", content=payload["message"], payload=payload)
         return payload
 
+    if re.search(r"\b505\b", question, re.I) and endpoint and supports_public(endpoint):
+        display_name = endpoint["name"]
+        action_label = f"Fetch the most recent public {display_name} endpoint"
+        action_prompt = f"Fetch the most recent public {display_name} endpoint."
+        payload = {
+            "session_id": session.session_id,
+            "status": "needs_input",
+            "intent": "http_505_recovery",
+            "message": (
+                "The private MISO endpoint returned HTTP 505, which means the request’s HTTP protocol was not accepted. "
+                f"The recommended next step is to use MISO’s public HTTPS endpoint for the latest {display_name} data."
+            ),
+            "sources": [MISO_PUBLIC_API_SOURCE],
+            "recovery_action": {"label": action_label, "prompt": action_prompt},
+            "delivery": classify(question, "http_505_recovery"),
+            "events": [_event("intent", "success", "Recognized an HTTP 505 report for an operation with a public equivalent."), _event("response", "warning", "Recommended the public endpoint before attempting another private request.")],
+        }
+        AgentMessage.objects.create(session=session, role="assistant", content=payload["message"], payload=payload)
+        return payload
+
+    # An explicit 505 report is a troubleshooting request, even when the
+    # wording also contains "API endpoint" and would otherwise resolve to a
+    # documentation preview.
+    if force_status is None and re.search(r"\b505\b", question, re.I):
+        force_status = 505
+
     if resolution["intent"] == "ignored":
         payload = {
             "session_id": session.session_id,
@@ -212,7 +245,7 @@ def run_chat(question, session_id=None, mode=None, force_status=None, selected_s
         return payload
 
     if resolution["intent"] == "general_info":
-        answer = gemini_general_answer(question)
+        answer = gemini_general_answer(question, session.context)
         if not answer:
             payload = {
                 "session_id": session.session_id,
@@ -229,7 +262,7 @@ def run_chat(question, session_id=None, mode=None, force_status=None, selected_s
             "status": "success",
             "intent": "general_info",
             "message": answer,
-            "sources": [MISO_MARKET_SOURCE if re.search(r"lmp|market|price|real[ -]?time", question, re.I) else MISO_ABOUT_SOURCE],
+            "sources": [MISO_PUBLIC_API_SOURCE if session.context.get("endpoint", {}).get("id") == "realtime_generation_fuel_type" else MISO_MARKET_SOURCE if re.search(r"lmp|market|price|real[ -]?time", question, re.I) else MISO_ABOUT_SOURCE],
             "delivery": classify(question, "general_info"),
             "events": events + [_event("response", "success", "Answered an in-scope MISO overview question without calling a data endpoint.")],
         }
@@ -325,7 +358,7 @@ def run_chat(question, session_id=None, mode=None, force_status=None, selected_s
         AgentMessage.objects.create(session=session, role="assistant", content=payload["message"], payload=payload)
         return _ground_payload(question, payload)
 
-    if resolution["intent"] == "api_request":
+    if resolution["intent"] == "api_request" and force_status != 505:
         request = APIRequest.objects.create(session=session, source_id=endpoint["id"], method=request_spec["method"], url=request_spec["url"], parameters=parameters, mode="preview")
         RequestHistory.objects.create(request=request, summary=f"API documentation preview — {endpoint['name']}")
         example_note = (
@@ -373,6 +406,7 @@ def run_chat(question, session_id=None, mode=None, force_status=None, selected_s
         payload = {
             "session_id": session.session_id, "status": "error", "endpoint": endpoint, "parameters": parameters,
             "request": request_spec, "error": advice, "error_id": error.id, "delivery": error_delivery, "handoff": handoff, "message": f"HTTP {force_status}: {advice['what_happened']}",
+            "public_fallback": _public_fallback(endpoint, resolution["parameters"]) if int(force_status) == 505 else None,
             "events": events + [_event("api", "error", f"Received HTTP {force_status} in diagnostic mode."), _event("troubleshooting", "success", "The web agent produced a safe remediation plan."), _event("handoff", "success", "The web agent queued the safe diagnosis for the local agent.")],
         }
         AgentMessage.objects.create(session=session, role="assistant", content=payload["message"], payload=payload)
@@ -430,6 +464,7 @@ def run_chat(question, session_id=None, mode=None, force_status=None, selected_s
         payload = {
             "session_id": session.session_id, "status": "error", "endpoint": endpoint, "parameters": parameters,
             "request": request_spec, "error": advice, "error_id": error.id, "delivery": error_delivery, "handoff": handoff, "message": f"HTTP {exc.status}: {advice['what_happened']}",
+            "public_fallback": _public_fallback(endpoint, resolution["parameters"]) if exc.status == 505 else None,
             "events": events + [_event("api", "error", f"MISO request failed with HTTP {exc.status}."), _event("troubleshooting", "success", "The web agent produced a safe remediation plan."), _event("handoff", "success", "The web agent queued the safe diagnosis for the local agent.")],
         }
     AgentMessage.objects.create(session=session, role="assistant", content=payload["message"], payload=payload)

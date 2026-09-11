@@ -7,14 +7,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 def load_local_env():
     """Tiny .env reader to avoid adding a secret-handling dependency."""
-    env_file = BASE_DIR / ".env"
-    if not env_file.exists():
-        return
-    for line in env_file.read_text().splitlines():
-        if "=" not in line or line.lstrip().startswith("#"):
+    # Local overrides load first so a developer can rotate one secret without
+    # editing the shared backend/.env file. Both files remain uncommitted.
+    for env_file in (BASE_DIR / ".env.local", BASE_DIR / ".env"):
+        if not env_file.exists():
             continue
-        key, value = line.split("=", 1)
-        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+        for line in env_file.read_text().splitlines():
+            if "=" not in line or line.lstrip().startswith("#"):
+                continue
+            key, value = line.split("=", 1)
+            os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
 
 
 load_local_env()

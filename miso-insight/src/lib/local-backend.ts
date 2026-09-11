@@ -58,6 +58,8 @@ export interface AgentResult {
   access_request?: { status: "draft" | "sent"; recipient: string; subject: string; body: string; timeline: string };
   verification?: { tested: boolean; status_code: number | null; source: string; authentication: string };
   error?: { status_code: number; category: string; what_happened: string; suggested_fix: string; can_retry: boolean; safe_request_context: { method?: string; url?: string } };
+  public_fallback?: { method: string; url: string; params: Record<string, string> } | null;
+  recovery_action?: { label: string; prompt: string };
 }
 
 export interface ConnectionState {

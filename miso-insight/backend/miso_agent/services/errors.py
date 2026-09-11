@@ -14,7 +14,7 @@ ERRORS = {
     502: ("gateway", "A gateway received an invalid upstream response.", "Retry later with backoff and check any local proxy configuration.", True),
     503: ("unavailable", "MISO is temporarily unavailable.", "Retry later with bounded backoff; do not treat this as empty data.", True),
     504: ("timeout", "The gateway timed out waiting for MISO.", "Retry later with bounded backoff and preserve the failed request audit record.", True),
-    505: ("http_version", "The server or gateway does not support the HTTP protocol version used.", "Remove manual Upgrade, Connection, or HTTP/2 headers; use the backend's standard HTTPS client and check proxy/TLS protocol settings before retrying.", False),
+    505: ("http_version", "The server or gateway does not support the HTTP protocol version used.", "Try the equivalent MISO public API endpoint instead of the private endpoint when one is available. Then remove manual Upgrade, Connection, or HTTP/2 headers, use the backend's standard HTTPS client, and check proxy/TLS protocol settings before retrying.", False),
 }
 
 

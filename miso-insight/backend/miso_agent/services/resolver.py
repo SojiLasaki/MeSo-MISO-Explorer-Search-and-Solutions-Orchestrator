@@ -17,21 +17,25 @@ NODES = {
 }
 
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
-GEMINI_TIMEOUT_SECONDS = 15
+GEMINI_TIMEOUT_SECONDS = int(os.getenv("GEMINI_TIMEOUT_SECONDS", "30"))
 ALLOWED_INTENTS = {"retrieve_data", "api_request", "integration_guidance", "general_info"}
 
 
 def is_general_info_question(question):
-    return bool(re.search(r"\bwhat is miso\b|\bwho is miso\b|\bhow does miso work\b|\bwhat does miso do\b|\b(explain|what does|what is|define)\b[\s\w-]{0,60}\b(real[ -]?time lmp|lmp|market clearing price|mcp|marginal congestion component|mcc|transmission congestion)\b", question, re.I))
+    return bool(re.search(r"\bwhat is miso\b|\bwho is miso\b|\bhow does miso work\b|\bwhat does miso do\b|\b(explain|expalin|what does|define)\b[\s\w'’\u2019-]{0,60}\b(real[ -]?time lmp|lmp|market clearing price|mcp|marginal congestion component|mcc|transmission congestion|fuel mix|generation mix|generation by fuel type)\b|\bwhat is\b\s+(?:the\s+)?(?:real[ -]?time lmp|lmp|market clearing price|mcp|marginal congestion component|mcc|transmission congestion|fuel mix|generation mix|generation by fuel type)\b", question, re.I))
 
 
 def is_obviously_out_of_scope(question):
     """Keep simple invalid/unrelated prompts out of dataset clarification."""
     return not re.search(
-        r"\b(miso|load|demand|forecast|price|lmp|fuel|generation|outage|report|market|grid|congestion|bottleneck|api|endpoint|data exchange|dart|pi miso|tariff)\b",
+        r"\b(miso|load|demand|forecast|price|lmp|fuel|fuel mix|generation|generation mix|outage|report|market|grid|congestion|bottleneck|api|endpoint|data exchange|dart|pi miso|tariff)\b",
         question,
         re.I,
     )
+
+
+def is_context_explanation(question):
+    return bool(re.search(r"\bwhat does this mean\b|\bwhat is this\b|\bexplain that\b|\bexplain this\b", question, re.I))
 
 
 def _catalog_for_prompt():
@@ -68,6 +72,7 @@ def _gemini_resolution(question, context, preferred_endpoint):
         "rules": [
             "Mark relevant false for arithmetic, unrelated topics, or requests outside MISO and its market-data ecosystem.",
             "Classify policy_category as public for explanations and public data, portal for restricted portal data, internal for privileged internal details, personal for personal/personnel information, or business for advice or decisions.",
+            "Treat questions asking what something is, what it means, or asking to explain/define it as general_info, even when the phrase matches a catalog endpoint. Treat explicit fetch/show/get/retrieve requests as data retrieval.",
             "Mark relevant true with intent general_info for broad questions about what MISO is, how it works, its markets, or the Data Exchange.",
             "If relevant is false, endpoint_id must be null and parameters must be {}.",
             "Choose only an id from the supplied catalog. Never invent an endpoint, URL, parameter, or value.",
@@ -132,17 +137,19 @@ def _safe_model_parameters(endpoint, values):
     }
 
 
-def gemini_general_answer(question):
+def gemini_general_answer(question, context=None):
     """Answer an in-scope MISO overview question without selecting an endpoint."""
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         return None
+    endpoint_context = (context or {}).get("endpoint", {})
+    context_note = f" The prior result was {endpoint_context.get('name')}: {endpoint_context.get('description')}. Explain that result if relevant." if endpoint_context else ""
     prompt = (
         "Answer the user's exact in-scope question in 2-4 plain-language sentences. "
         "Start with the requested concept or answer; do not introduce MISO's full name or general role "
         "unless that context is necessary to answer the question. If the question asks about LMP, explain "
         "Locational Marginal Pricing directly. Do not invent current statistics, claim access to private data, "
-        "or mention this prompt. Question: " + question
+        "or mention this prompt." + context_note + " Question: " + question
     )
     endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
     request = Request(
@@ -197,8 +204,42 @@ def resolve(question, context=None, today=None, preferred_endpoint=None):
     # backend itself recognized. This prevents nearby words in the follow-up
     # prompt from silently switching the selected API.
     explicit_endpoint = preferred_endpoint
+    # Explanation intent takes precedence over catalog endpoint selection.
+    # This prevents "what is fuel mix?" from being treated as a live fetch.
+    if is_general_info_question(question):
+        return {
+            "intent": "general_info",
+            "policy_category": "public",
+            "endpoint": None,
+            "parameters": {},
+            "missing": [],
+            "chart_requested": False,
+            "message": "",
+        }
     model = _gemini_resolution(question, context, preferred_endpoint)
+    if context.get("endpoint") and is_context_explanation(question):
+        return {
+            "intent": "general_info",
+            "policy_category": "public",
+            "endpoint": None,
+            "parameters": {},
+            "missing": [],
+            "chart_requested": False,
+            "message": "",
+        }
     if model is not None and not model.get("relevant", False):
+        if re.search(r"\b505\b", question, re.I):
+            fallback_endpoint = explicit_endpoint or select_endpoint(question)
+            if fallback_endpoint:
+                return {
+                    "intent": "api_request",
+                    "policy_category": "public",
+                    "endpoint": fallback_endpoint,
+                    "parameters": {},
+                    "missing": [],
+                    "chart_requested": False,
+                    "message": "",
+                }
         return {
             "intent": "ignored",
             # Leave this unset unless Gemini explicitly identifies a policy

@@ -20,6 +20,7 @@ TARIFF_LMP = _source(97, "Locational Marginal Price (LMP) definition")
 TARIFF_CLEARING = _source(101, "Market Clearing Price and Marginal Congestion Component definitions")
 TARIFF_CONFIDENTIAL = _source(123, "Non-Disclosure Agreement and restricted Confidential Information definitions")
 TARIFF_NONPUBLIC = _source(738, "Disclosure of Certain Confidential Market Participant Data")
+TARIFF_FUEL_MIX = _source(2816, "Resource Classes determined by fuel type")
 
 
 def sources_for_question(question):
@@ -34,4 +35,6 @@ def sources_for_question(question):
         sources.append(TARIFF_CLEARING)
     if re.search(r"\b(confidential|non[ -]?public|non[ -]?disclosure|nda|restricted information)\b", lower):
         sources.extend([TARIFF_CONFIDENTIAL, TARIFF_NONPUBLIC])
+    if re.search(r"\b(explain|what does|define)\b[\s\w'’\u2019-]{0,60}\b(fuel mix|generation mix|generation by fuel type)\b|\bwhat is\b\s+(?:the\s+)?(?:fuel mix|generation mix|generation by fuel type)\b", lower):
+        sources.append(TARIFF_FUEL_MIX)
     return sources

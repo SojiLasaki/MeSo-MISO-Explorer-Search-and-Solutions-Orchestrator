@@ -91,6 +91,23 @@ interface SavedSessionMessage {
 
 type ChatTurn = { role: "user" | "agent"; text: string; result?: AgentResult };
 
+// Keep the active response complete so its CSV export still has every row,
+// but avoid retaining multi-thousand-row payloads in older rendered turns.
+// Older turns only need the same six-row preview the UI displays.
+function compactHistoryResult(result: AgentResult): AgentResult {
+  const data = result.data;
+  if (!data?.data || data.data.length <= 6) return result;
+  const { raw: _raw, ...compactData } = data;
+  return {
+    ...result,
+    data: { ...compactData, data: data.data.slice(0, 6) },
+  };
+}
+
+function compactHistory(items: ChatTurn[]) {
+  return items.map((item) => item.result ? { ...item, result: compactHistoryResult(item.result) } : item);
+}
+
 function buildConversationSummary(history: ChatTurn[]) {
   if (!history.length) return "No conversation yet.";
   const lines = ["MISO AI conversation summary", "", "Conversation:"];
@@ -173,7 +190,7 @@ export function WebDataAgent({ powerTrader = false, initialReport, initialApi }:
     try {
       const next = await localApi<{ session: { session_id: string }; messages: SavedSessionMessage[] }>(`/agent/sessions/${savedSessionId}/`);
       setSessionId(next.session.session_id);
-      setHistory(next.messages.map((item) => ({ role: item.role === "assistant" ? "agent" : "user", text: item.content, result: item.role === "assistant" && typeof item.payload?.["status"] === "string" ? item.payload as AgentResult : undefined })));
+      setHistory(compactHistory(next.messages.map((item) => ({ role: item.role === "assistant" ? "agent" : "user", text: item.content, result: item.role === "assistant" && typeof item.payload?.["status"] === "string" ? item.payload as AgentResult : undefined }))));
       const lastResult = [...next.messages].reverse().find((item) => item.role === "assistant" && typeof item.payload?.["status"] === "string");
       setResult(lastResult ? lastResult.payload as AgentResult : null);
       setHistoryOpen(false);
@@ -208,7 +225,7 @@ export function WebDataAgent({ powerTrader = false, initialReport, initialApi }:
   const send = async (question = message) => {
     const trimmed = question.trim();
     if (!trimmed || running) return;
-    setHistory((items) => [...items, { role: "user", text: trimmed }]);
+    setHistory((items) => [...compactHistory(items), { role: "user", text: trimmed }]);
     setMessage("");
     if (messageInput.current) messageInput.current.style.height = "";
     setRunning(true);
@@ -336,7 +353,7 @@ export function WebDataAgent({ powerTrader = false, initialReport, initialApi }:
 
           {result && history.length === 0 && <section className="mx-auto mt-5 grid max-w-6xl gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(300px,0.8fr)]"><div className="rounded-3xl border bg-card p-5 shadow-soft sm:p-6"><ResultPanel result={result} question="" detailsOpen={detailsOpen} setDetailsOpen={setDetailsOpen} onQuickReply={(text) => void send(text)} /></div><AgentTimeline events={result.events ?? []} statusLabel={agentStatusLabel(result)} /></section>}
 
-          {result?.error && <section className="mx-auto mt-5 max-w-6xl rounded-3xl border border-destructive/25 bg-card p-5 shadow-soft sm:p-6"><button type="button" onClick={() => setErrorOpen((open) => !open)} className="flex w-full items-center justify-between text-left"><span className="flex items-center gap-2 text-[15px] font-medium"><CircleAlert className="size-4 text-destructive" /> Error Center — HTTP {result.error.status_code}</span><ChevronDown className={cn("size-4 transition-transform", errorOpen && "rotate-180")} /></button>{errorOpen && <ErrorDiagnosis error={result.error} request={result.request} />}</section>}
+          {result?.error && <section className="mx-auto mt-5 max-w-6xl rounded-3xl border border-destructive/25 bg-card p-5 shadow-soft sm:p-6"><button type="button" onClick={() => setErrorOpen((open) => !open)} className="flex w-full items-center justify-between text-left"><span className="flex items-center gap-2 text-[15px] font-medium"><CircleAlert className="size-4 text-destructive" /> Error Center — HTTP {result.error.status_code}</span><ChevronDown className={cn("size-4 transition-transform", errorOpen && "rotate-180")} /></button>{errorOpen && <ErrorDiagnosis error={result.error} request={result.request} publicFallback={result.public_fallback} />}</section>}
         </div>
       </section>
 
@@ -477,9 +494,10 @@ function ResultPanel({
           documentationUrl: result.endpoint.documentation_url,
         })
       : null;
-  return <><div className="flex flex-wrap items-start justify-between gap-3"><div>{(result.endpoint?.name || result.report?.title) && <h2 className="text-[20px] font-medium">{result.endpoint?.name ?? result.report?.title}</h2>}{result.message && !awaitingInput ? <p className="mt-1 text-[13px] text-muted-foreground">{result.message}</p> : null}</div>{typeof result.verification?.status_code === "number" && <span className="flex items-center gap-1.5 text-[11.5px] text-success"><CheckCircle2 className="size-3.5" />HTTP {result.verification.status_code}</span>}</div>
+  return <><div className="flex flex-wrap items-start justify-between gap-3"><div>{(result.endpoint?.name || result.report?.title) && <h2 className="text-[20px] font-medium">{result.endpoint?.name ?? result.report?.title}</h2>}{result.message && question === "" && !awaitingInput ? <p className="mt-1 text-[13px] text-muted-foreground">{result.message}</p> : null}</div>{typeof result.verification?.status_code === "number" && <span className="flex items-center gap-1.5 text-[11.5px] text-success"><CheckCircle2 className="size-3.5" />HTTP {result.verification.status_code}</span>}</div>
   {result.sources && result.sources.length > 0 && <div className="mt-4 rounded-2xl border bg-muted/10 p-3"><p className="text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground">Sources</p><div className="mt-2 flex flex-wrap gap-2">{result.sources.map((source, index) => { const label = source.page ? `${source.title} · PDF p. ${source.page}` : source.title; return <div key={`${source.title}-${index}`} className="flex flex-col gap-2">{source.url ? <a href={source.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-lg border bg-card px-2.5 py-1.5 text-[11.5px] font-medium text-accent hover:border-accent">{label}<ArrowUpRight className="size-3" /></a> : <span title={source.document} className="inline-flex items-center gap-1 rounded-lg border bg-card px-2.5 py-1.5 text-[11.5px] font-medium text-foreground">{label}</span>}{source.request_json && <details className="rounded-lg border bg-card px-2.5 py-1.5 text-[10.5px]"><summary className="cursor-pointer font-medium text-muted-foreground">View JSON request</summary><pre className="mt-2 max-w-full overflow-auto whitespace-pre-wrap text-[10px] leading-relaxed">{JSON.stringify(source.request_json, null, 2)}</pre></details>}</div>; })}</div></div>}
   {result.access_request && <div className="mt-5 rounded-2xl border border-dashed bg-muted/30 p-4"><p className="text-[13px] font-medium">Access request email generated</p><p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">{result.access_request.timeline}</p><a className="mt-3 inline-flex rounded-lg border bg-card px-3 py-1.5 text-[12px] font-medium" href={`mailto:${result.access_request.recipient}?subject=${encodeURIComponent(result.access_request.subject)}&body=${encodeURIComponent(result.access_request.body)}`}>Open email draft</a></div>}
+  {result.recovery_action && <div className="mt-5 rounded-2xl border border-accent/25 bg-accent-soft/20 p-4"><p className="text-[13px] font-medium">Next step</p><p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">Would you like me to fetch the most recent public endpoint?</p><button type="button" onClick={() => onQuickReply(result.recovery_action!.prompt)} className="mt-3 rounded-lg bg-primary px-3 py-2 text-[11.5px] font-medium text-primary-foreground hover:opacity-90">{result.recovery_action.label}</button></div>}
   {result.report && <div className="mt-5 rounded-2xl border bg-muted/20 p-4"><p className="text-[12px] leading-relaxed text-muted-foreground">{result.report.description}</p><a href={result.report.url} target="_blank" rel="noreferrer" className="mt-3 inline-flex text-[12px] font-medium text-accent hover:underline">Open official MISO report →</a></div>}
   {awaitingInput && result.missing_parameters ? <MissingParameterPrompt missing={result.missing_parameters} message={result.message} onQuickReply={onQuickReply} /> : null}
 
@@ -555,4 +573,4 @@ function AgentTimeline({ events, statusLabel }: { events: AgentResult["events"];
   return <section className="rounded-2xl border bg-muted/10"><button type="button" onClick={() => setOpen((value) => !value)} className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"><span className="flex items-center gap-2 text-[13px] font-medium"><Activity className="size-4 text-accent" /> Agent execution</span><ChevronDown className={cn("size-4 transition-transform", open && "rotate-180")} /></button>{open && <div className="border-t px-4 py-4">{statusLabel && <p className="mb-4 text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground">Status · {statusLabel}</p>}<ol className="space-y-4">{events.map((event, index) => <li key={index} className="flex gap-3"><span className={cn("mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full", event.status === "error" ? "bg-destructive-soft text-destructive" : event.status === "warning" ? "bg-accent-soft text-accent" : "bg-success-soft text-success")}>{event.status === "error" ? <XCircle className="size-3.5" /> : event.status === "warning" ? <CircleAlert className="size-3.5" /> : <CheckCircle2 className="size-3.5" />}</span><div><p className="text-[12.5px] font-medium capitalize">{event.stage}</p><p className="mt-0.5 text-[12px] leading-relaxed text-muted-foreground">{event.message}</p></div></li>)}</ol></div>}</section>;
 }
 
-function ErrorDiagnosis({ error, request }: { error: NonNullable<AgentResult["error"]>; request?: AgentResult["request"] }) { return <div className="mt-5 grid gap-4 border-t pt-5 sm:grid-cols-2"><div className="rounded-2xl border bg-destructive-soft/25 p-4"><p className="text-[10.5px] font-medium uppercase tracking-wide text-destructive">What happened</p><p className="mt-2 text-[13px] leading-relaxed">{error.what_happened}</p><p className="mt-3 text-[11.5px] text-muted-foreground">Classification: {error.category.replace("_", " ")}</p></div><div className="rounded-2xl border bg-muted/20 p-4"><p className="text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground">Agent recommendation</p><p className="mt-2 text-[13px] leading-relaxed">{error.suggested_fix}</p><p className="mt-3 text-[11.5px] text-muted-foreground">{error.can_retry ? "Retry is permitted after this check." : "A retry is not recommended until configuration is corrected."}</p></div>{request && <div className="sm:col-span-2 rounded-2xl border bg-muted/10 p-4"><p className="text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground">Safe request context</p><code className="mt-2 block break-all text-[11px]">{request.method} {request.url}</code><p className="mt-2 text-[11px] text-muted-foreground">No subscription key or authorization value was recorded.</p></div>}</div>; }
+function ErrorDiagnosis({ error, request, publicFallback }: { error: NonNullable<AgentResult["error"]>; request?: AgentResult["request"]; publicFallback?: AgentResult["public_fallback"] }) { return <div className="mt-5 grid gap-4 border-t pt-5 sm:grid-cols-2"><div className="rounded-2xl border bg-destructive-soft/25 p-4"><p className="text-[10.5px] font-medium uppercase tracking-wide text-destructive">What happened</p><p className="mt-2 text-[13px] leading-relaxed">{error.what_happened}</p><p className="mt-3 text-[11.5px] text-muted-foreground">Classification: {error.category.replace("_", " ")}</p></div><div className="rounded-2xl border bg-muted/20 p-4"><p className="text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground">Agent recommendation</p><p className="mt-2 text-[13px] leading-relaxed">{error.suggested_fix}</p><p className="mt-3 text-[11.5px] text-muted-foreground">{error.can_retry ? "Retry is permitted after this check." : "A retry is not recommended until configuration is corrected."}</p></div>{publicFallback && error.status_code === 505 && <div className="sm:col-span-2 rounded-2xl border border-accent/25 bg-accent-soft/20 p-4"><p className="text-[13px] font-medium">Try the public MISO endpoint</p><p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">This operation has a public equivalent. Use it to isolate private-endpoint authentication or protocol issues.</p><a href={publicFallback.url} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1 rounded-lg border bg-card px-3 py-1.5 text-[11.5px] font-medium text-accent hover:border-accent">Open public HTTPS endpoint <ArrowUpRight className="size-3" /></a><pre className="mt-3 overflow-auto whitespace-pre-wrap rounded-lg border bg-card p-3 text-[10px]">{JSON.stringify(publicFallback, null, 2)}</pre></div>}{request && <div className="sm:col-span-2 rounded-2xl border bg-muted/10 p-4"><p className="text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground">Safe request context</p><code className="mt-2 block break-all text-[11px]">{request.method} {request.url}</code><p className="mt-2 text-[11px] text-muted-foreground">No subscription key or authorization value was recorded.</p></div>}</div>; }
